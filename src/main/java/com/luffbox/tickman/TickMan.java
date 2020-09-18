@@ -57,16 +57,16 @@ public class TickMan {
 		String token = cmd.getOptionValue("token");
 		inviteClientId = cmd.getOptionValue("clientid");
 
-		// Initialization
-		JDABuilder builder = JDABuilder.createDefault(token);
-		confBuilder(builder);
-
 		try {
+			JDABuilder builder = JDABuilder.createDefault(token);
+			confBuilder(builder);
 			jda = builder.build();
 		} catch (LoginException e) {
 			System.err.println("Failed to login with provided auth token!\n" + e.getMessage());
 			System.exit(1);
 		}
+
+		jda.addEventListener(new EventListener(this));
 
 		botUserName = jda.getSelfUser().getName();
 		cmds.add(new HelpCmd(this));
@@ -81,7 +81,6 @@ public class TickMan {
 		builder.enableIntents(GatewayIntent.GUILD_MEMBERS);
 		builder.setMemberCachePolicy(MemberCachePolicy.ALL);
 		builder.setLargeThreshold(50);
-		builder.addEventListeners(new EventListener(this));
 	}
 
 	public static GuildOpts getGuildOptions(Guild g) {

@@ -1,5 +1,6 @@
 plugins {
     id 'com.github.johnrengelman.shadow' version '6.0.0'
+    id 'application'
     id 'java'
 }
 
@@ -9,6 +10,10 @@ jar {
                 'Main-Class': 'com.luffbox.tickman.TickMan'
         )
     }
+}
+
+application {
+    mainClassName = 'com.luffbox.tickman.TickMan'
 }
 
 group 'com.luffbox'
@@ -21,6 +26,7 @@ repositories {
 
 dependencies {
     implementation 'commons-cli:commons-cli:1.4'
+    implementation group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1.1'
     implementation ('net.dv8tion:JDA:4.2.0_204') {
         exclude module: 'opus-java'
     }

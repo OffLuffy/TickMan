@@ -24,9 +24,9 @@ public class HelpCmd extends CmdHandler {
 			eb.setDescription("Commands offered by " + tickman.getBotName() + "\nArguments: **<Required>** *[Optional]*");
 
 			for (CmdHandler cmd : tickman.cmds) {
-				if (cmd instanceof InviteCmd && !guildData.allowInvite()) continue;
+				if (cmd instanceof InviteCmd && !guildData.canInvite()) continue;
 				if (cmd.opts.showHelp()) {
-					StringBuilder sb = new StringBuilder(guildData.cmdPrefix() + cmd.opts.name());
+					StringBuilder sb = new StringBuilder(guildData.getCmdPrefix() + cmd.opts.name());
 					for (CmdArg arg : cmd.opts.args()) {
 						sb.append(" ")
 								.append(arg.required() ? "**<" : "*[")

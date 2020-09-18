@@ -3,6 +3,7 @@ package com.luffbox.tickman.listeners;
 import com.luffbox.tickman.TickMan;
 import com.luffbox.tickman.util.GuildOpts;
 import com.luffbox.tickman.util.cmd.CmdHandler;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.ReadyEvent;
@@ -40,37 +41,50 @@ public class EventListener extends ListenerAdapter {
 	@Override
 	public final void onMessageReceived(MessageReceivedEvent e) {
 		GuildOpts data = TickMan.getGuildOptions(e.getChannelType() == ChannelType.TEXT ? e.getGuild() : null );
-		if (e.getMessage().getContentRaw().isBlank() || e.getAuthor().isBot() || !e.getMessage().getContentRaw().startsWith(data.cmdPrefix())) { return; }
+		boolean hasCmdPrefix = e.getMessage().getContentRaw().startsWith(data.getCmdPrefix());
+		if (e.getMessage().getContentRaw().isBlank() || e.getAuthor().isBot()) { return; }
 
-		String[] msgParts = e.getMessage().getContentRaw().split("\\s+");
-		String cmd = msgParts[0].substring(data.cmdPrefix().length()).toLowerCase(Locale.ENGLISH);
-//		String[] args = (String[]) Arrays.stream(msgParts).skip(1).toArray();
+		if (hasCmdPrefix) { // Treat the message like a command
+			String[] msgParts = e.getMessage().getContentRaw().split("\\s+");
+			String cmd = msgParts[0].substring(data.getCmdPrefix().length()).toLowerCase(Locale.ENGLISH);
+			String[] args = Arrays.copyOfRange(msgParts, 1, msgParts.length);
 
-		CmdHandler selectedCmd = null;
-		for (CmdHandler c : tickman.cmds) {
-			if (Arrays.stream(c.opts.aliases()).anyMatch(cmd::equalsIgnoreCase)) {
-				selectedCmd = c;
+			CmdHandler selectedCmd = null;
+			for (CmdHandler c : tickman.cmds) {
+				if (Arrays.stream(c.opts.aliases()).anyMatch(cmd::equalsIgnoreCase)) {
+					selectedCmd = c;
+				}
+			}
+
+			if (selectedCmd != null) {
+				if (e.getChannelType() == ChannelType.PRIVATE) {
+					selectedCmd.onPrivateMessage(e, args);
+				} else {
+					selectedCmd.onCommand(e, data, args);
+					if (selectedCmd.opts.delete()) {
+						e.getMessage().delete().queueAfter(3, TimeUnit.SECONDS);
+					}
+				}
+			} else {
+				e.getChannel().sendMessage(e.getAuthor().getAsMention() + " Command not recognized! (Deleting in 10 seconds)").queue(msg -> {
+					e.getMessage().delete().queueAfter(10, TimeUnit.SECONDS);
+					msg.delete().queueAfter(10, TimeUnit.SECONDS);
+				});
+			}
+		} else { // Not a command, check if message was sent to support channel
+			if (data.getSupportChannel() != null && e.getChannel().equals(data.getSupportChannel())) {
+				String username = e.getMember() != null ? e.getMember().getEffectiveName() : "User";
+				data.getGuild().createTextChannel(username + "'s Ticket", null).queue(channel -> {
+					EmbedBuilder embed = new EmbedBuilder();
+					embed.setAuthor(e.getMember().getEffectiveName(), null, e.getAuthor().getAvatarUrl());
+					embed.addField("Request Body:", e.getMessage().getContentRaw(), false);
+					channel.sendMessage(embed.build()).queue(ticketMsg -> {
+						e.getMessage().delete().queue();
+						e.getChannel().sendMessage(e.getAuthor().getAsMention() + " Please switch to " + channel.getAsMention() + " to continue")
+								.queue(msg -> msg.delete().queueAfter(30, TimeUnit.SECONDS));
+					});
+				});
 			}
 		}
-
-		if (selectedCmd != null) {
-			if (e.getChannelType() == ChannelType.PRIVATE) {
-				selectedCmd.onPrivateMessage(e, msgParts);
-			} else {
-				selectedCmd.onCommand(e, data, msgParts);
-				if (selectedCmd.opts.delete()) { e.getMessage().delete().queueAfter(3, TimeUnit.SECONDS); }
-			}
-		}
-
-		/*if (e.getMessage().getContentRaw().equalsIgnoreCase(data.cmdPrefix() + opts.name())) {
-			if (e.getChannelType() == ChannelType.PRIVATE) {
-				onPrivateMessage(e);
-			} else {
-				GuildOpts data = TickMan.getGuildOptions(e.getGuild());
-				if (data == null) { System.out.println("Guild has null options"); return; }
-				onCommand(e, data);
-				if (opts.delete()) { e.getMessage().delete().queue(); }
-			}
-		}*/
 	}
 }

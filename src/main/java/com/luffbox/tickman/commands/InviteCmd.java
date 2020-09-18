@@ -13,7 +13,7 @@ public class InviteCmd extends CmdHandler {
 
 	@Override
 	public void onCommand(MessageReceivedEvent event, GuildOpts guildData, String[] args) {
-		if (!guildData.allowInvite()) { return; }
+		if (!guildData.canInvite()) { return; }
 		event.getAuthor().openPrivateChannel().queue(channel -> channel.sendMessage("Open this link to invite me to your server!\n<" + tickman.getInviteUrl() + ">").queue());
 	}
 }

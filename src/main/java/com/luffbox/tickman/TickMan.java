@@ -1,7 +1,6 @@
 package com.luffbox.tickman;
 
-import com.luffbox.tickman.commands.HelpCmd;
-import com.luffbox.tickman.commands.InviteCmd;
+import com.luffbox.tickman.commands.*;
 import com.luffbox.tickman.listeners.EventListener;
 import com.luffbox.tickman.util.GuildOpts;
 import com.luffbox.tickman.util.cmd.CmdHandler;
@@ -71,6 +70,7 @@ public class TickMan {
 		botUserName = jda.getSelfUser().getName();
 		cmds.add(new HelpCmd(this));
 		cmds.add(new InviteCmd(this));
+		cmds.add(new ConfigureGuildCmd(this));
 
 	}
 
@@ -92,7 +92,7 @@ public class TickMan {
 	private static void createGuildOpts(Guild g) {
 		if (!guildRecords.containsKey(g)) {
 			System.out.println("Created default guild options for guild: " + g.getName());
-			guildRecords.put(g, GuildOpts.def());
+			guildRecords.put(g, new GuildOpts(g));
 		}
 	}
 

@@ -1,0 +1,31 @@
+plugins {
+    id 'com.github.johnrengelman.shadow' version '6.0.0'
+    id 'java'
+}
+
+jar {
+    manifest {
+        attributes (
+                'Main-Class': 'com.luffbox.tickman.TickMan'
+        )
+    }
+}
+
+group 'com.luffbox'
+version '0.0.1'
+
+repositories {
+    mavenCentral()
+    jcenter()
+}
+
+dependencies {
+    implementation 'commons-cli:commons-cli:1.4'
+    implementation ('net.dv8tion:JDA:4.2.0_204') {
+        exclude module: 'opus-java'
+    }
+}
+
+compileJava {
+    options.compilerArgs += ["--enable-preview"]
+}

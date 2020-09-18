@@ -1,0 +1,15 @@
+.idea/
+build/
+gradle/
+.gradle/
+gradlew
+gradlew.bat
+
+# CMake
+cmake-build-*/
+
+# File-based project format
+*.iws
+
+# IntelliJ
+out/

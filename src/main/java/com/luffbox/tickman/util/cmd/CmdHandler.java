@@ -1,7 +1,7 @@
 package com.luffbox.tickman.util.cmd;
 
 import com.luffbox.tickman.TickMan;
-import com.luffbox.tickman.util.GuildOpts;
+import com.luffbox.tickman.util.ticket.GuildOpts;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 

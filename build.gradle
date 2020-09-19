@@ -26,7 +26,8 @@ repositories {
 
 dependencies {
     implementation 'commons-cli:commons-cli:1.4'
-    implementation group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1.1'
+//    implementation 'com.googlecode.json-simple:json-simple:1.1.1'
+    implementation 'com.github.cliftonlabs:json-simple:3.1.1'
     implementation ('net.dv8tion:JDA:4.2.0_204') {
         exclude module: 'opus-java'
     }

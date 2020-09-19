@@ -1,7 +1,7 @@
 package com.luffbox.tickman.commands;
 
 import com.luffbox.tickman.TickMan;
-import com.luffbox.tickman.util.GuildOpts;
+import com.luffbox.tickman.util.ticket.GuildOpts;
 import com.luffbox.tickman.util.cmd.CmdArg;
 import com.luffbox.tickman.util.cmd.CmdHandler;
 import com.luffbox.tickman.util.cmd.CmdOpts;

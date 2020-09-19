@@ -1,9 +1,8 @@
 package com.luffbox.tickman.listeners;
 
 import com.luffbox.tickman.TickMan;
-import com.luffbox.tickman.util.GuildOpts;
 import com.luffbox.tickman.util.cmd.CmdHandler;
-import net.dv8tion.jda.api.EmbedBuilder;
+import com.luffbox.tickman.util.ticket.GuildOpts;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.ReadyEvent;
@@ -27,27 +26,19 @@ public class EventListener extends ListenerAdapter {
 
 		List<Guild> guilds = e.getJDA().getGuilds();
 		if (guilds.size() > 0) {
-			System.out.println("Currently connected to " + guilds.size() + " guild" + (guilds.size() == 1 ? "" : "s") + ":");
 			StringBuilder sb = new StringBuilder();
 			for (Guild g : guilds) {
 				if (sb.length() > 0) { sb.append(", "); }
 				sb.append(" ").append(g.getName());
 				TickMan.getGuildOptions(g);
 			}
+			System.out.println("Currently connected to " + guilds.size() + " guild" + (guilds.size() == 1 ? "" : "s") + ":");
 			System.out.println(sb.toString());
 		}
 	}
 
 	@Override
 	public final void onMessageReceived(MessageReceivedEvent e) {
-
-		/*List<MessageEmbed> embeds = e.getMessage().getEmbeds();
-		if (!embeds.isEmpty()) {
-			MessageEmbed embed = embeds.get(0);
-			if (embed.getThumbnail() != null) {
-				System.out.println(embed.getThumbnail().getUrl());
-			}
-		}*/
 
 		GuildOpts data = TickMan.getGuildOptions(e.getChannelType() == ChannelType.TEXT ? e.getGuild() : null );
 		boolean hasCmdPrefix = e.getMessage().getContentRaw().startsWith(data.getCmdPrefix());
@@ -81,19 +72,19 @@ public class EventListener extends ListenerAdapter {
 				});
 			}
 		} else { // Not a command, check if message was sent to support channel
-			if (data.getSupportChannel() != null && e.getChannel().equals(data.getSupportChannel())) {
-				String username = e.getMember() != null ? e.getMember().getEffectiveName() : "User";
-				data.getGuild().createTextChannel(username + "'s Ticket", null).queue(channel -> {
-					EmbedBuilder embed = new EmbedBuilder();
-					embed.setAuthor(e.getMember().getEffectiveName(), null, e.getAuthor().getAvatarUrl());
-					embed.addField("Request Body:", e.getMessage().getContentRaw(), false);
-					channel.sendMessage(embed.build()).queue(ticketMsg -> {
-						e.getMessage().delete().queue();
-						e.getChannel().sendMessage(e.getAuthor().getAsMention() + " Please switch to " + channel.getAsMention() + " to continue")
-								.queue(msg -> msg.delete().queueAfter(30, TimeUnit.SECONDS));
-					});
-				});
-			}
+//			if (data.getSupportChannel() != null && e.getChannel().equals(data.getSupportChannel())) {
+//				String username = e.getMember() != null ? e.getMember().getEffectiveName() : "User";
+//				data.getGuild().createTextChannel(username + "'s Ticket", null).queue(channel -> {
+//					EmbedBuilder embed = new EmbedBuilder();
+//					embed.setAuthor(e.getMember().getEffectiveName(), null, e.getAuthor().getAvatarUrl());
+//					embed.addField("Request Body:", e.getMessage().getContentRaw(), false);
+//					channel.sendMessage(embed.build()).queue(ticketMsg -> {
+//						e.getMessage().delete().queue();
+//						e.getChannel().sendMessage(e.getAuthor().getAsMention() + " Please switch to " + channel.getAsMention() + " to continue")
+//								.queue(msg -> msg.delete().queueAfter(30, TimeUnit.SECONDS));
+//					});
+//				});
+//			}
 		}
 	}
 }

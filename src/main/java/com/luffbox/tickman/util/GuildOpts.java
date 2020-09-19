@@ -2,10 +2,10 @@ package com.luffbox.tickman.util;
 
 import net.dv8tion.jda.api.entities.*;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -17,6 +17,14 @@ import java.util.concurrent.TimeUnit;
  * If the Guild is set to null, most methods that modify the data will fail.
  */
 public class GuildOpts {
+
+	private static final File OUT_DIR = new File(System.getProperty("user.dir") + File.separator + "data");
+	static { if (!OUT_DIR.exists()) {
+		//noinspection ResultOfMethodCallIgnored
+		OUT_DIR.mkdirs();
+	}}
+
+	private final File outFile;
 
 	private final Guild guild;
 	private final Set<Role> supportRoles = new HashSet<>();
@@ -33,35 +41,45 @@ public class GuildOpts {
 
 	public GuildOpts (Guild guild) {
 		this.guild = guild;
+		outFile = guild == null ? null : new File(OUT_DIR, guild.getId() + ".json");
 		save();
 	}
 
 	public void load() {
-
+		if (guild == null || !outFile.exists()) return;
+		JSONParser parser = new JSONParser();
+		try (Reader reader = new FileReader(outFile)) {
+			JSONObject json = (JSONObject) parser.parse(reader);
+			setTicketCategoryId((String) json.get("ticketCategory"));
+			setSupportChannelId((String) json.get("supportCategory"));
+			setCmdPrefix((String) json.get("cmdPrefix"));
+			setAllowInvite((boolean) json.get("allowInvite"));
+		} catch (IOException e) {
+			System.err.println("Failed to read guild data file for guild: " + guild.getName() + ", file: " + outFile.getName() + ", reason: " + e.getMessage());
+		} catch (ParseException e) {
+			System.err.println("Guild data file has invalid JSON for guild: " + guild.getName() + ", file: " + outFile.getName() + ", reason: " + e.getMessage());
+		}
 	}
 
 	public void save() {
 		if (guild == null) return;
 
-		File outDir = new File(System.getProperty("user.dir") + File.separator + "data");
-		File outFile = new File(outDir, guild.getId() + ".json");
-
-		Map<String, Object> data = new HashMap<>();
-		data.put("guildId", guild.getId());
-		data.put("ticketCategory", ticketCategory != null ? ticketCategory.getId() : "");
-		data.put("supportChannel", supportChannel != null ? supportChannel.getId() : "");
-		data.put("cmdPrefix", cmdPrefix);
-		data.put("allowInvite", allowInvite);
-		data.put("supportRoles", supportRoles.stream().map(ISnowflake::getId).toArray());
-		/*Set<String> roles = new HashSet<>();
-		for (Role r : supportRoles) { roles.add(r.getId()); }
-		data.put("supportRoles", roles.toArray(new String[] {}));*/
-
-		JSONObject guild = new JSONObject(data);
+		JSONObject json = new JSONObject(new HashMap<>() {
+			{
+				put("guildId", guild.getId());
+				put("ticketCategory", ticketCategory != null ? ticketCategory.getId() : "");
+				put("supportChannel", supportChannel != null ? supportChannel.getId() : "");
+				put("cmdPrefix", cmdPrefix);
+				put("allowInvite", allowInvite);
+				Set<String> roles = new HashSet<>();
+				for (Role r : supportRoles) { roles.add(r.getId()); }
+				put("supportRoles", roles);
+			}
+		});
 
 		try (FileWriter fw = new FileWriter(outFile)) {
 			if (outFile.exists() || outFile.createNewFile()) {
-				fw.write(guild.toJSONString());
+				fw.write(json.toJSONString());
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -114,6 +132,7 @@ public class GuildOpts {
 	public boolean addSupportRole(Role r) {
 		if (guild == null || r == null || !r.getGuild().equals(guild)) { return false; }
 		supportRoles.add(r);
+		save();
 		return true;
 	}
 
@@ -125,13 +144,14 @@ public class GuildOpts {
 	public boolean removeSupportRole(Role r) {
 		if (guild == null || r == null || !r.getGuild().equals(guild)) { return false; }
 		supportRoles.remove(r);
+		save();
 		return true;
 	}
 
 	/**
 	 * Remotes all Roles from the support Roles List
 	 */
-	public void clearSupportRoles() { supportRoles.clear(); }
+	public void clearSupportRoles() { supportRoles.clear(); save(); }
 
 	/**
 	 * Sets the Category used to contain Ticket Channels
@@ -143,6 +163,7 @@ public class GuildOpts {
 		ticketCategory = category;
 		System.out.println("Guild: " + guild.getName() + " (ID: " + guild.getId() + ") set ticket category to "
 				+ category.getName() + " (ID: " + category.getId() + ")");
+		save();
 		return true;
 	}
 
@@ -173,6 +194,7 @@ public class GuildOpts {
 				+ channel.getName() + " (ID: " + channel.getId() + ")");
 		supportChannel.sendMessage("Now listening to this channel for ticket requests")
 				.queue(msg -> msg.delete().queueAfter(15, TimeUnit.SECONDS));
+		save();
 		return true;
 	}
 
@@ -199,6 +221,7 @@ public class GuildOpts {
 	 */
 	public void setCmdPrefix(String cmdPrefix) {
 		this.cmdPrefix = cmdPrefix;
+		save();
 	}
 
 	/**
@@ -207,5 +230,6 @@ public class GuildOpts {
 	 */
 	public void setAllowInvite(boolean allow) {
 		allowInvite = allow;
+		save();
 	}
 }

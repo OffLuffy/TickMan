@@ -40,6 +40,15 @@ public class EventListener extends ListenerAdapter {
 
 	@Override
 	public final void onMessageReceived(MessageReceivedEvent e) {
+
+		/*List<MessageEmbed> embeds = e.getMessage().getEmbeds();
+		if (!embeds.isEmpty()) {
+			MessageEmbed embed = embeds.get(0);
+			if (embed.getThumbnail() != null) {
+				System.out.println(embed.getThumbnail().getUrl());
+			}
+		}*/
+
 		GuildOpts data = TickMan.getGuildOptions(e.getChannelType() == ChannelType.TEXT ? e.getGuild() : null );
 		boolean hasCmdPrefix = e.getMessage().getContentRaw().startsWith(data.getCmdPrefix());
 		if (e.getMessage().getContentRaw().isBlank() || e.getAuthor().isBot()) { return; }

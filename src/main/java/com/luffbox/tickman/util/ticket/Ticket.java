@@ -2,14 +2,10 @@ package com.luffbox.tickman.util.ticket;
 
 import com.github.cliftonlabs.json_simple.JsonObject;
 import com.github.cliftonlabs.json_simple.Jsonable;
-import com.luffbox.tickman.TickMan;
 import com.luffbox.tickman.util.snowflake.ITMSnowflake;
-import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.*;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -23,11 +19,12 @@ public class Ticket implements Jsonable, ITMSnowflake {
 	private Member author;
 	// TODO: Participants?
 
-	public Ticket(Department dept, Message msg, TextChannel channel) {
+	public Ticket(long id, @Nonnull Department dept, @Nonnull Member author, @Nonnull TextChannel channel) {
 		this.dept = dept;
-		this.ticketId = TickMan.getSnowflake();
+		this.ticketId = id;
 		this.ticketChannel = channel;
-		this.author = msg.getMember();
+		this.author = author;
+		// TODO: Setup channel permissions
 	}
 
 	@Override
@@ -46,9 +43,41 @@ public class Ticket implements Jsonable, ITMSnowflake {
 	 */
 	public Guild getGuild() { return dept.getGuild(); }
 
-	public void setAuthor(Member author) { this.author = author; }
+	public boolean setAuthor(Member author) {
+		if (getGuild() == null || author == null || !author.getGuild().equals(getGuild())) { return false; }
+		this.author = author;
+		dept.getConfig().save();
+		return true;
+	}
+	public boolean setAuthorId(String id) {
+		if (id != null && !id.isBlank()) {
+			try {
+				Member member = getGuild().getMemberById(id);
+				if (member != null) {
+					return setAuthor(member);
+				}
+			} catch (Exception ignore) {}
+		}
+		return false;
+	}
 
-	public void setTicketChannel(TextChannel channel) { this.ticketChannel = channel; }
+	public boolean setTicketChannel(TextChannel channel) {
+		if (getGuild() == null || channel == null || !channel.getGuild().equals(getGuild())) { return false; }
+		this.ticketChannel = channel;
+		dept.getConfig().save();
+		return true;
+	}
+	public boolean setTicketChannelId(String id) {
+		if (id != null && !id.isBlank()) {
+			try {
+				GuildChannel gc = getGuild().getGuildChannelById(id);
+				if (gc != null && gc.getType() == ChannelType.TEXT) {
+					return setTicketChannel((TextChannel) gc);
+				}
+			} catch (Exception ignore) {}
+		}
+		return false;
+	}
 
 	public void transferDepartment(Department otherDept) {
 		this.dept = otherDept;
@@ -59,17 +88,13 @@ public class Ticket implements Jsonable, ITMSnowflake {
 					.queue()));
 	}
 
-	public static Ticket createNew(Department dept, Message msg) {
-		if (msg == null || msg.getMember() == null) { return null; }
-		Ticket ticket = new Ticket(dept, msg, null);
-		ticket.setAuthor(msg.getMember());
-		dept.getTicketCategory().createTextChannel(msg.getMember().getEffectiveName() + "_ticket").queue(channel -> {
-			ticket.setTicketChannel(channel);
-			EmbedBuilder embed = dept.newEmbed();
-			embed.setTitle("New Ticket Submitted by " + msg.getMember().getEffectiveName());
-			channel.sendMessage("").queue();
-		});
-		return ticket;
+	public void closeTicket() {
+		// TODO: Save ticket transcript to file (upload to user?)
+		ticketChannel.delete().queue();
+	}
+
+	public void fromJson(JsonObject json) {
+
 	}
 
 	@Override

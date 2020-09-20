@@ -57,9 +57,7 @@ public class SnowflakeServer {
 
 		if (lastTime == time) {
 			sequence = (sequence + 1) & sequenceMask;
-			if (sequence == 0) {
-				time = tilNextMillis(lastTime);
-			}
+			if (sequence == 0) { time = tilNextMillis(lastTime); }
 		} else { sequence = 0; }
 
 		lastTime = time;

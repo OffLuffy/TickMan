@@ -1,50 +1,63 @@
 package com.luffbox.tickman.commands;
 
 import com.luffbox.tickman.TickMan;
-import com.luffbox.tickman.util.cmd.CmdArg;
-import com.luffbox.tickman.util.cmd.CmdArgType;
-import com.luffbox.tickman.util.cmd.CmdHandler;
-import com.luffbox.tickman.util.cmd.CmdOpts;
+import com.luffbox.tickman.commands.conf.CmdPrefixSubCmd;
+import com.luffbox.tickman.util.cmd.*;
 import com.luffbox.tickman.util.ticket.Config;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-public class ConfigureGuildCmd extends CmdHandler {
+public class ConfigureCmd extends CmdHandler {
 
-//    enum Property {
-//        ADDROLES(   "addroles",      "Adds roles to the list of roles which can respond to tickets"
-//                , "conf addroles <role>...\n`<role>` must be a mentioned role (i.e. @role) - More than one role may be provided at a time."),
-//        DELROLES(   "delroles",      "Removes roles from the list of roles which can respond to tickets"
-//                , "conf delroles <role>...\n`<role>` must be a mentioned role (i.e. @role) - More than one role may be provided at a time."),
-//        RESETROLES( "resetroles",    "Removes all roles from the list of roles which can respond to tickets"
-//                , "conf resetroles"),
-//        CATEGORY(   "category",      "Sets the category in which tickets channels are created"
-//                , "conf category <category>\n`<category>` can either be a category's name or the ID"),
-//        CHANNEL(    "channel",       "Sets the channel that will listen for support requests"
-//                , "conf channel <channel>\n`<channel>` must be a mentioned text channel (i.e. #channel)"),
-//        PREFIX(     "prefix",        "Sets the prefix this guild requires to run a command"
-//                , "conf prefix <prefix>\n`<prefix>` is usually a single character such as `~` or `!`"),
-//        INVITE(     "invite",        "Sets whether users are allowed to use the invite command"
-//                , "conf invite [true|false]\nThis command will only accept `true` or `false`");
-//
-//        public String name, desc, usage;
-//        Property(String name, String desc, String usage) {
-//            this.name = name; this.desc = desc; this.usage = usage;
-//        }
-//    }
+	private final Set<ConfigSubCmd> subCmd = new HashSet<>();
 
-	public ConfigureGuildCmd(TickMan tickman) {
-		super(tickman, new CmdOpts(new String[] {"conf", "confguild"}, "Configure the current guild", false, true, true,
+	public ConfigureCmd(TickMan tickman) {
+		super(tickman, new CmdOpts(new String[] {"conf", "confguild", "options"}, "Configure the current guild", false, true, true,
 				new CmdArg("property", CmdArgType.STRING, true),
 				new CmdArg("value", CmdArgType.STRING, true)
 		));
+		subCmd.add(new CmdPrefixSubCmd());
 	}
 
 	@Override
 	public void onCommand(MessageReceivedEvent e, Config config, String[] args) {
 		if (e.getMember() == null || !e.getMember().hasPermission(Permission.ADMINISTRATOR)) { return; }
+
+		if (args.length == 0) {
+            EmbedBuilder embed = config.newEmbed();
+            embed.setTitle(config.getGuild().getName() + " -- " + tickman.getBotName() + " Config");
+            embed.addField("Command Prefix", config.getCmdPrefix(), true);
+            embed.addField("Allow Invite", config.canInvite() ? "Enabled" : "Disabled", true);
+            embed.addField("Embed Color", String.format("#%06x", config.getEmbedColor().longValue()), true);
+            e.getMessage().delete().queueAfter(1, TimeUnit.SECONDS);
+            e.getChannel().sendMessage(embed.build()).queue(msg -> msg.delete().queueAfter(1, TimeUnit.MINUTES));
+			return;
+		}
+
+		String prop = args[0].toLowerCase(Locale.ENGLISH);
+		List<Role> mr = e.getMessage().getMentionedRoles();
+		List<TextChannel> mc = e.getMessage().getMentionedChannels();
+
+		// TODO: Implement remaining ConfigSubCmds (prefix, invite, color, dept-category, dept-channel, dept-roles, dept-name)
+
+		ConfigSubCmd exeSub = null;
+		for (ConfigSubCmd sc : subCmd) {
+			if (Arrays.asList(sc.aliases).contains(prop)) {
+				exeSub = sc; break;
+			}
+		}
+		if (exeSub != null) {
+			exeSub.modify(config, e.getMessage(), Arrays.copyOfRange(args, 1, args.length - 1));
+		} else {
+			selfDelMsg(e, "Unrecognized property type!", true);
+		}
+
 //        if (args.length > 0) {
 //            System.out.println("Property: " + args[0]);
 //            if (args.length > 1) {

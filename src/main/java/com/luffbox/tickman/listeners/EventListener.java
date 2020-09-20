@@ -3,6 +3,8 @@ package com.luffbox.tickman.listeners;
 import com.luffbox.tickman.TickMan;
 import com.luffbox.tickman.util.cmd.CmdHandler;
 import com.luffbox.tickman.util.ticket.Config;
+import com.luffbox.tickman.util.ticket.Department;
+import com.luffbox.tickman.util.ticket.Ticket;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.ReadyEvent;
@@ -39,6 +41,7 @@ public class EventListener extends ListenerAdapter {
 
 	@Override
 	public final void onMessageReceived(MessageReceivedEvent e) {
+		if (e.getMember() == null) return;
 
 		Config config = TickMan.getGuildConfig(e.getChannelType() == ChannelType.TEXT ? e.getGuild() : null );
 		boolean hasCmdPrefix = e.getMessage().getContentRaw().startsWith(config.getCmdPrefix());
@@ -72,19 +75,14 @@ public class EventListener extends ListenerAdapter {
 				});
 			}
 		} else { // Not a command, check if message was sent to support channel
-//			if (data.getSupportChannel() != null && e.getChannel().equals(data.getSupportChannel())) {
-//				String username = e.getMember() != null ? e.getMember().getEffectiveName() : "User";
-//				data.getGuild().createTextChannel(username + "'s Ticket", null).queue(channel -> {
-//					EmbedBuilder embed = new EmbedBuilder();
-//					embed.setAuthor(e.getMember().getEffectiveName(), null, e.getAuthor().getAvatarUrl());
-//					embed.addField("Request Body:", e.getMessage().getContentRaw(), false);
-//					channel.sendMessage(embed.build()).queue(ticketMsg -> {
-//						e.getMessage().delete().queue();
-//						e.getChannel().sendMessage(e.getAuthor().getAsMention() + " Please switch to " + channel.getAsMention() + " to continue")
-//								.queue(msg -> msg.delete().queueAfter(30, TimeUnit.SECONDS));
-//					});
-//				});
-//			}
+			for (Department dept : config.getDepartments()) {
+				if (dept.getSupportChannel() != null && dept.getSupportChannel().equals(e.getChannel())) {
+					Ticket ticket = dept.createTicket(e.getMessage());
+					e.getMessage().delete().queueAfter(1, TimeUnit.SECONDS);
+					e.getChannel().sendMessage(e.getAuthor().getAsMention() + " Please switch to " + ticket.getTicketChannel().getAsMention() + " to continue")
+							.queue(msg -> msg.delete().queueAfter(1, TimeUnit.MINUTES));
+				}
+			}
 		}
 	}
 }

@@ -1,6 +1,6 @@
 package com.luffbox.tickman;
 
-import com.luffbox.tickman.commands.ConfigureGuildCmd;
+import com.luffbox.tickman.commands.ConfigureCmd;
 import com.luffbox.tickman.commands.HelpCmd;
 import com.luffbox.tickman.commands.InviteCmd;
 import com.luffbox.tickman.listeners.EventListener;
@@ -90,7 +90,7 @@ public class TickMan {
 		botUserName = jda.getSelfUser().getName();
 		cmds.add(new HelpCmd(this));
 		cmds.add(new InviteCmd(this));
-		cmds.add(new ConfigureGuildCmd(this));
+		cmds.add(new ConfigureCmd(this));
 
 	}
 

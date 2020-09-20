@@ -17,7 +17,7 @@ public interface ITMSnowflake extends ISnowflake {
 		return OffsetDateTime.ofInstant(gmt.toInstant(), gmt.getTimeZone().toZoneId());
 	}
 
-	default boolean eq(Object obj) { return obj instanceof ITMSnowflake other && other.getIdLong() == getIdLong(); }
+	default boolean eq(Object obj) { return obj == this || (obj instanceof ITMSnowflake other && other.getIdLong() == getIdLong()); }
 
 	default int hc() {
 		return Long.hashCode(getIdLong());

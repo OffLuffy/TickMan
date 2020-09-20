@@ -22,11 +22,8 @@ public class Config implements Jsonable {
 
 	private enum Field {
 		GUILD_ID("guildId"),
-		TICKET_CATEGORY("ticketCategory"),
-		SUPPORT_CHANNEL("supportChannel"),
 		CMD_PREFIX("cmdPrefix"),
 		ALLOW_INVITE("allowInvite"),
-		SUPPORT_ROLES("supportRoles"),
 		EMBED_COLOR("embedColor"),
 		DEPARTMENTS("departments");
 
@@ -67,10 +64,13 @@ public class Config implements Jsonable {
 			setEmbedColor((BigDecimal) json.get(Field.EMBED_COLOR.path));
 
 			JsonObject depts = (JsonObject) json.get(Field.DEPARTMENTS.path);
-			for (String deptId : depts.keySet()) {
-				try {
-					departments.add(new Department(this, (JsonObject) depts.get(deptId)));
-				} catch (Exception ignore) {}
+			if (depts != null) {
+				for (String deptId : depts.keySet()) {
+					try {
+						departments.add(new Department(this, (JsonObject) depts.get(deptId)));
+					} catch (Exception ignore) {
+					}
+				}
 			}
 
 		} catch (IOException e) {
@@ -97,24 +97,6 @@ public class Config implements Jsonable {
 	 */
 	public Guild getGuild() { return guild; }
 
-//	/**
-//	 * Gets a Set of the current support Roles
-//	 * @return An immutable copy of the current support Roles
-//	 */
-//	public Set<Role> getSupportRoles() { return Set.copyOf(supportRoles); }
-//
-//	/**
-//	 * Gets the Category that should contain new Ticket Channels
-//	 * @return A Category object which should contain newly created Ticket Channels
-//	 */
-//	public Category getTicketCategory() { return ticketCategory; }
-//
-//	/**
-//	 * Gets the currently set TextChannel that is currently handling requests
-//	 * @return A TextChannel object which should be handling requests. May be null if not set by the Guild
-//	 */
-//	public TextChannel getSupportChannel() { return supportChannel; }
-
 	/**
 	 * Gets the Guild's current command prefix
 	 * @return A String containing the Guild's current command prefix
@@ -134,94 +116,11 @@ public class Config implements Jsonable {
 	 */
 	public BigDecimal getEmbedColor() { return embedColor; }
 
-//	/**
-//	 * Adds a Role to the Guild's List of support Roles
-//	 * @param r The Role to add
-//	 * @return true if added successfully or already in the List. Will fail if Guild is null
-//	 */
-//	public boolean addSupportRole(Role r) {
-//		if (guild == null || r == null || !r.getGuild().equals(guild)) { return false; }
-//		supportRoles.add(r);
-//		save();
-//		return true;
-//	}
-//
-//	/**
-//	 * Removes a Role from the Guild's List of support Roles
-//	 * @param r The Role to remove
-//	 * @return true if removed successfully or not already in the List. Will fail if Guild is null
-//	 */
-//	public boolean removeSupportRole(Role r) {
-//		if (guild == null || r == null || !r.getGuild().equals(guild)) { return false; }
-//		supportRoles.remove(r);
-//		save();
-//		return true;
-//	}
-//
-//	/**
-//	 * Remotes all Roles from the support Roles List
-//	 */
-//	public void clearSupportRoles() { supportRoles.clear(); save(); }
-//
-//	/**
-//	 * Sets the Category used to contain Ticket Channels
-//	 * @param category The Category intended to contain Tickets Channels
-//	 * @return true of the Category is valid. Will fail if Guild is null
-//	 */
-//	public boolean setTicketCategory(Category category) {
-//		if (guild == null || category == null || !category.getGuild().equals(guild)) { return false; }
-//		ticketCategory = category;
-//		save();
-//		return true;
-//	}
-//
-//	/**
-//	 * Sets the Category used to contain Ticket Channels
-//	 * @param id The ID of a Category intended to contain Ticket Channels
-//	 * @return true of the ID resolves to a valid Category. Will fail if Guild is null
-//	 */
-//	public boolean setTicketCategoryId(String id) {
-//		if (id != null && !id.isBlank() && guild != null) {
-//			try {
-//				Category cat = guild.getCategoryById(id);
-//				if (cat != null) { return setTicketCategory(cat); }
-//			} catch (Exception ignore) {}
-//		}
-//		return false;
-//	}
-//
-//	/**
-//	 * Sets the TextChannel used to create Tickets
-//	 * @param channel The TextChannel intended to handle requests and convert them into Tickets
-//	 * @return true of the TextChannel is valid. Will fail if Guild is null
-//	 */
-//	public boolean setSupportChannel(TextChannel channel, boolean announce) {
-//		if (guild == null || channel == null || !channel.getGuild().equals(guild)) { return false; }
-//		supportChannel = channel;
-//		if (announce) {
-//			supportChannel.sendMessage("Now listening to this channel for ticket requests")
-//					.queue(msg -> msg.delete().queueAfter(15, TimeUnit.SECONDS));
-//		}
-//		save();
-//		return true;
-//	}
-//
-//	/**
-//	 * Sets the TextChannel used to create Tickets
-//	 * @param id The ID of a TextChannel intended to handle requests and convert them into Tickets
-//	 * @return true of the ID resolves to a valid TextChannel. Will fail if Guild is null
-//	 */
-//	public boolean setSupportChannelId(String id, boolean announce) {
-//		if (id != null && !id.isBlank() && guild != null) {
-//			try {
-//				GuildChannel gc = guild.getGuildChannelById(id);
-//				if (gc != null && gc.getType() == ChannelType.TEXT) {
-//					return setSupportChannel((TextChannel) gc, announce);
-//				}
-//			} catch (Exception ignore) {}
-//		}
-//		return false;
-//	}
+	/**
+	 * Gets a Set of the current Departments
+	 * @return An immutable copy of the current Departments
+	 */
+	public Set<Department> getDepartments() { return Set.copyOf(departments); }
 
 	/**
 	 * Sets the Guild's command prefix
@@ -264,18 +163,12 @@ public class Config implements Jsonable {
 		final JsonObject json = new JsonObject(new HashMap<>() {
 			{
 				put(Field.GUILD_ID.path, guild.getId());
-//				put(Field.TICKET_CATEGORY.path, ticketCategory != null ? ticketCategory.getId() : "");
-//				put(Field.SUPPORT_CHANNEL.path, supportChannel != null ? supportChannel.getId() : "");
 				put(Field.CMD_PREFIX.path, cmdPrefix);
 				put(Field.ALLOW_INVITE.path, allowInvite);
 				put(Field.EMBED_COLOR.path, embedColor);
 				JsonObject depts = new JsonObject();
 				for (Department dept : departments) { depts.put(dept.getId(), dept.toJson()); }
 				put(Field.DEPARTMENTS.path, depts);
-
-//				Set<String> roles = new HashSet<>();
-//				for (Role r : supportRoles) { roles.add(r.getId()); }
-//				put(Field.SUPPORT_ROLES.path, roles);
 			}
 		});
 		json.toJson(writable);

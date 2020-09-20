@@ -1,17 +1,13 @@
 package com.luffbox.tickman.util.ticket;
 
 import com.github.cliftonlabs.json_simple.JsonObject;
-import com.github.cliftonlabs.json_simple.Jsonable;
 import com.luffbox.tickman.util.snowflake.ITMSnowflake;
 import net.dv8tion.jda.api.entities.*;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.io.Writer;
 import java.util.HashMap;
 
-public class Ticket implements Jsonable, ITMSnowflake {
+public class Ticket implements ITMSnowflake {
 
 	private final long ticketId;
 	private Department dept;
@@ -24,6 +20,7 @@ public class Ticket implements Jsonable, ITMSnowflake {
 		this.ticketId = id;
 		this.ticketChannel = channel;
 		this.author = author;
+		this.dept.addTicket(this);
 		// TODO: Setup channel permissions
 	}
 
@@ -79,13 +76,23 @@ public class Ticket implements Jsonable, ITMSnowflake {
 		return false;
 	}
 
-	public void transferDepartment(Department otherDept) {
-		this.dept = otherDept;
-		// Send transferring notification, move channel, update message to say transferred
-		ticketChannel.sendMessage(":hourglass: Transferring ticket to " + otherDept.getName())
-			.queue(msg -> ticketChannel.getManager().setParent(otherDept.getTicketCategory())
-				.queue(unused -> msg.editMessage(":white_check_mark: Transferred ticket to " + otherDept.getName())
-					.queue()));
+	public void transferDepartment(Department recvDept) {
+		Department oldDept = this.dept;
+		this.dept = recvDept;
+
+		oldDept.removeTicket(this);
+		recvDept.addTicket(this);
+
+		if (oldDept.getTicketCategory().equals(recvDept.getTicketCategory())) {
+			// Already in the right category, so just send message with transfer confirmation
+			ticketChannel.sendMessage(":white_check_mark: Transferred ticket to " + recvDept.getName()).queue();
+		} else {
+			// Send transferring notification, move channel, update message with transfer confirmation
+			ticketChannel.sendMessage(":hourglass: Transferring ticket to " + recvDept.getName())
+					.queue(msg -> ticketChannel.getManager().setParent(recvDept.getTicketCategory())
+							.queue(unused -> msg.editMessage(":white_check_mark: Transferred ticket to " + recvDept.getName())
+									.queue()));
+		}
 	}
 
 	public void closeTicket() {
@@ -93,27 +100,24 @@ public class Ticket implements Jsonable, ITMSnowflake {
 		ticketChannel.delete().queue();
 	}
 
-	public void fromJson(JsonObject json) {
-
+	public static Ticket fromJson(long id, JsonObject json, Department dept) {
+		Member author = null;
+		TextChannel channel = null;
+		try { author = dept.getGuild().getMemberById((long) json.get(Config.Field.TICKET_AUTHOR.path)); } catch (Exception ignore) {}
+		try { channel = dept.getGuild().getTextChannelById((long) json.get(Config.Field.TICKET_CHANNEL.path)); } catch (Exception ignore) {}
+		if (author == null || channel == null) { return null; }
+		return new Ticket(id, dept, author, channel);
 	}
 
-	@Override
-	public String toJson() {
-		final StringWriter writable = new StringWriter();
-		try { this.toJson(writable); } catch (final IOException e) { e.printStackTrace(); }
-		return writable.toString();
-	}
-
-	@Override
-	public void toJson(Writer writable) throws IOException {
-		final JsonObject json = new JsonObject(new HashMap<>() {
+	public JsonObject toJson() {
+		return new JsonObject(new HashMap<>() {
 			{
-				put("department", getDepartment().getId());
-				put("author", getAuthor().getId());
-				put("channel", getTicketChannel().getId());
+//				put(Config.Field.TICKET_ID.path, getId());
+				put(Config.Field.TICKET_DEPT.path, getDepartment().getId());
+				put(Config.Field.TICKET_AUTHOR.path, getAuthor().getId());
+				put(Config.Field.TICKET_CHANNEL.path, getTicketChannel().getId());
 			}
 		});
-		json.toJson(writable);
 	}
 
 	@Override

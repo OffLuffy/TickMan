@@ -44,7 +44,7 @@ public class SnowflakeServer {
 		this.workerId = workerId;
 		this.datacenterId = datacenterId;
 		this.sequence = sequence;
-		System.out.printf("Worker starting. Timestamp left shift %d, datacenter id bits %d, worker id bits %d, sequence bits %d, workerid %d",
+		System.out.printf("Worker starting. Timestamp left shift %d, datacenter id bits %d, worker id bits %d, sequence bits %d, workerid %d%n",
 				timestampLeftShift, datacenterIdBits, workerIdBits, sequenceBits, workerId);
 	}
 

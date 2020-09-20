@@ -1,8 +1,6 @@
 package com.luffbox.tickman;
 
-import com.luffbox.tickman.commands.ConfigureCmd;
-import com.luffbox.tickman.commands.HelpCmd;
-import com.luffbox.tickman.commands.InviteCmd;
+import com.luffbox.tickman.commands.*;
 import com.luffbox.tickman.listeners.EventListener;
 import com.luffbox.tickman.util.cmd.CmdHandler;
 import com.luffbox.tickman.util.snowflake.InvalidSystemClockException;
@@ -17,6 +15,7 @@ import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import org.apache.commons.cli.*;
 
+import javax.annotation.Nonnull;
 import javax.security.auth.login.LoginException;
 import java.io.File;
 import java.util.HashMap;
@@ -91,6 +90,7 @@ public class TickMan {
 		cmds.add(new HelpCmd(this));
 		cmds.add(new InviteCmd(this));
 		cmds.add(new ConfigureCmd(this));
+		cmds.add(new FindTicketCmd(this));
 
 	}
 
@@ -113,16 +113,9 @@ public class TickMan {
 		return id;
 	}
 
-	public static Config getGuildConfig(Guild g) {
-		if (g == null) { return Config.def(); }
-		createGuildConfig(g);
-		return guildConfigs.containsKey(g) ? guildConfigs.get(g) : Config.def();
-	}
-
-	private static void createGuildConfig(Guild g) {
-		if (!guildConfigs.containsKey(g)) {
-			guildConfigs.put(g, new Config(g));
-		}
+	public static Config getGuildConfig(@Nonnull Guild g) {
+		if (!guildConfigs.containsKey(g)) { guildConfigs.put(g, new Config(g)); }
+		return guildConfigs.get(g);
 	}
 
 }

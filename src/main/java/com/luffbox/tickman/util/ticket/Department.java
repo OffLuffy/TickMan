@@ -7,7 +7,8 @@ import com.luffbox.tickman.util.snowflake.ITMSnowflake;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
 
-import java.util.HashMap;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -17,12 +18,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Department implements ITMSnowflake {
 
-	private enum Field {
-		NAME("name"),
-		TICKET_CATEGORY("ticketCategory"),
-		SUPPORT_CHANNEL("supportChannel"),
-		SUPPORT_ROLES("supportRoles"),
-		TICKETS("tickets");
+	private enum Field {;
 
 		public String path;
 		Field(String path) { this.path = path; }
@@ -36,13 +32,11 @@ public class Department implements ITMSnowflake {
 	private Category ticketCategory = null;
 	private TextChannel supportChannel = null;
 
-	public Department(Config config, JsonObject deptJson) {
-		this(config);
-		fromJson(deptJson);
-	}
-	public Department (Config config) {
-		this.deptId = TickMan.getSnowflake();
+	public Department (long deptId, @Nonnull Config config, @Nonnull String name, @Nullable JsonObject json) {
+		this.deptId = deptId;
 		this.config = config;
+		this.name = name;
+		if (json != null) { fromJson(json); }
 	}
 
 	@Override
@@ -174,19 +168,9 @@ public class Department implements ITMSnowflake {
 		return false;
 	}
 
-	public void fromJson(JsonObject json) {
-		setName((String) json.get(Field.NAME.path));
-		setSupportChannelId((String) json.get(Field.SUPPORT_CHANNEL.path), false);
-		setTicketCategoryId((String) json.get(Field.TICKET_CATEGORY.path));
+	public void addTicket(Ticket ticket) { tickets.add(ticket); }
 
-		JsonArray roleIds = (JsonArray) json.get(Field.SUPPORT_ROLES.path);
-		for (Object rid : roleIds.toArray()) {
-			try {
-				Role role = getGuild().getRoleById(rid.toString());
-				if (role != null) { addSupportRole(role); }
-			} catch (Exception ignore) {}
-		}
-	}
+	public void removeTicket(Ticket ticket) { tickets.remove(ticket); }
 
 	public Ticket createTicket(Message msg) {
 		if (msg == null || msg.getMember() == null) { return null; }
@@ -208,16 +192,44 @@ public class Department implements ITMSnowflake {
 		return ticket;
 	}
 
-	public JsonObject toJson() {
-		return new JsonObject(new HashMap<>() {
-			{
-				put(Field.TICKET_CATEGORY.path, ticketCategory != null ? ticketCategory.getId() : "");
-				put(Field.SUPPORT_CHANNEL.path, supportChannel != null ? supportChannel.getId() : "");
-				Set<String> roles = new HashSet<>();
-				for (Role r : supportRoles) { roles.add(r.getId()); }
-				put(Field.SUPPORT_ROLES.path, roles);
+	public void fromJson(JsonObject json) {
+		setName((String) json.get(Config.Field.DEPT_NAME.path));
+		setSupportChannelId((String) json.get(Config.Field.DEPT_CHANNEL.path), false);
+		setTicketCategoryId((String) json.get(Config.Field.DEPT_CATEGORY.path));
+
+		JsonArray roleIds = (JsonArray) json.get(Config.Field.DEPT_ROLES.path);
+		if (roleIds != null && !roleIds.isEmpty()) {
+			for (Object rid : roleIds.toArray()) {
+				try {
+					Role role = getGuild().getRoleById(rid.toString());
+					if (role != null) { addSupportRole(role); }
+				} catch (Exception ignore) {}
 			}
-		});
+		}
+
+		JsonObject tickets = (JsonObject) json.get(Config.Field.DEPT_TICKETS.path);
+		if (tickets != null && !tickets.isEmpty()) {
+			for (String ticketId : tickets.keySet()) {
+				JsonObject ticketJson = (JsonObject) tickets.get(ticketId);
+				Ticket.fromJson(Long.parseLong(ticketId), ticketJson, this);
+			}
+		} else {
+			new Ticket(TickMan.getSnowflake(), this, getGuild().getSelfMember(), getGuild().getDefaultChannel());
+		}
+	}
+
+	public JsonObject toJson() {
+		return new JsonObject() { {
+//			put(Config.Field.DEPT_ID.path, getId());
+			put(Config.Field.DEPT_NAME.path, name);
+			put(Config.Field.DEPT_CATEGORY.path, ticketCategory != null ? ticketCategory.getId() : "");
+			put(Config.Field.DEPT_CHANNEL.path, supportChannel != null ? supportChannel.getId() : "");
+			Set<String> roles = new HashSet<>();
+			for (Role r : supportRoles) { roles.add(r.getId()); }
+			put(Config.Field.DEPT_ROLES.path, roles);
+			JsonObject ticketsJson = new JsonObject() { { for (Ticket t : tickets) { put(t.getId(), t.toJson()); } } };
+			put(Config.Field.DEPT_TICKETS.path, ticketsJson);
+		} };
 	}
 
 	public EmbedBuilder newEmbed() { return config.newEmbed(); }

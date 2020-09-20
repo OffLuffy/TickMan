@@ -6,8 +6,9 @@ import com.github.cliftonlabs.json_simple.Jsonable;
 import com.github.cliftonlabs.json_simple.Jsoner;
 import com.luffbox.tickman.TickMan;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.*;
 
+import javax.annotation.Nonnull;
 import java.io.*;
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -20,12 +21,27 @@ import java.util.Set;
  */
 public class Config implements Jsonable {
 
-	private enum Field {
+	enum Field {
+		// Paths to values in guild config
 		GUILD_ID("guildId"),
 		CMD_PREFIX("cmdPrefix"),
 		ALLOW_INVITE("allowInvite"),
 		EMBED_COLOR("embedColor"),
-		DEPARTMENTS("departments");
+		DEPARTMENTS("departments"),
+
+		// Paths to values in Departments subsection in guild config
+		DEPT_ID("deptId"),
+		DEPT_NAME("name"),
+		DEPT_CATEGORY("ticketCategory"),
+		DEPT_CHANNEL("supportChannel"),
+		DEPT_ROLES("supportRoles"),
+		DEPT_TICKETS("tickets"),
+
+		// Paths to values in Tickets subsection in Departments config
+		TICKET_ID("ticketId"),
+		TICKET_DEPT("ticketDept"),
+		TICKET_AUTHOR("author"),
+		TICKET_CHANNEL("ticketChannel");
 
 		public String path;
 		Field(String path) { this.path = path; }
@@ -39,22 +55,20 @@ public class Config implements Jsonable {
 	private boolean allowInvite = false;
 	private BigDecimal embedColor = BigDecimal.valueOf(0x33AAFF);
 
-	/**
-	 * Creates a default Config object with a null Guild. Mostly used when handling private messages
-	 * @return A Config instance populated with default values and a null Guild object.
-	 */
-	public static Config def() { return new Config(null); }
+//	/**
+//	 * Creates a default Config object with a null Guild. Mostly used when handling private messages
+//	 * @return A Config instance populated with default values and a null Guild object.
+//	 */
+//	public static Config def() { return new Config(null); }
 
-	public Config(Guild guild) {
+	public Config(@Nonnull Guild guild) {
 		this.guild = guild;
-		outFile = guild == null ? null : new File(TickMan.GUILD_DATA, guild.getId() + ".json");
+		outFile = new File(TickMan.GUILD_DATA, guild.getId() + ".json");
 		load();
-		save();
 	}
 
 	public void load() {
-		if (guild == null) { (new Exception()).printStackTrace(); }
-		if (guild == null || !outFile.exists()) return;
+		if (!outFile.exists()) { save(); }
 
 		try (FileReader readIn = new FileReader(outFile)) {
 			JsonObject json = (JsonObject) Jsoner.deserialize(readIn);
@@ -65,10 +79,24 @@ public class Config implements Jsonable {
 
 			JsonObject depts = (JsonObject) json.get(Field.DEPARTMENTS.path);
 			if (depts != null) {
+				System.out.println("depts Json object not null");
+				System.out.println("depts Json keySet = " + depts.keySet());
+				if (depts.keySet().isEmpty()) {
+					System.out.println("depts Json keySet is empty");
+					System.out.println("Created: " + createDepartment("Support"));
+					save();
+				}
 				for (String deptId : depts.keySet()) {
+					System.out.println("Attempting to load Department with ID: " + deptId);
 					try {
-						departments.add(new Department(this, (JsonObject) depts.get(deptId)));
-					} catch (Exception ignore) {
+						Department dept = new Department(Long.parseLong(deptId),
+								this, (String) json.get(Field.DEPT_NAME.path), (JsonObject) depts.get(deptId));
+						System.out.println("Loaded: " + dept);
+						departments.add(dept);
+						save();
+					} catch (Exception e) {
+						System.err.println("Failed to load Department ID: " + deptId);
+						e.printStackTrace();
 					}
 				}
 			}
@@ -93,7 +121,7 @@ public class Config implements Jsonable {
 	/**
 	 * Gets the Guild associated with this Config
 	 * @return The Guild object assocaited with this Config. May be null if a default set of Config are used
-	 * @see Config#def()
+//	 * @see Config#def()
 	 */
 	public Guild getGuild() { return guild; }
 
@@ -151,6 +179,20 @@ public class Config implements Jsonable {
 		return embed;
 	}
 
+	public Department createDepartment(String name) {
+		Department dept = new Department(TickMan.getSnowflake(), this, name, null);
+		departments.add(dept);
+		return dept;
+	}
+
+	public void deleteDepartment(String deptId) {
+		for (Department dept : getDepartments()) {
+			if (dept.getId().equals(deptId)) {
+				departments.remove(dept);
+			}
+		}
+	}
+
 	@Override
 	public String toJson() {
 		final StringWriter writable = new StringWriter();
@@ -162,7 +204,7 @@ public class Config implements Jsonable {
 	public void toJson(Writer writable) throws IOException {
 		final JsonObject json = new JsonObject(new HashMap<>() {
 			{
-				put(Field.GUILD_ID.path, guild.getId());
+//				put(Field.GUILD_ID.path, guild.getId());
 				put(Field.CMD_PREFIX.path, cmdPrefix);
 				put(Field.ALLOW_INVITE.path, allowInvite);
 				put(Field.EMBED_COLOR.path, embedColor);

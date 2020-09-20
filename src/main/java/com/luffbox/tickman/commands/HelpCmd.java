@@ -1,7 +1,7 @@
 package com.luffbox.tickman.commands;
 
 import com.luffbox.tickman.TickMan;
-import com.luffbox.tickman.util.ticket.GuildOpts;
+import com.luffbox.tickman.util.ticket.Config;
 import com.luffbox.tickman.util.cmd.CmdArg;
 import com.luffbox.tickman.util.cmd.CmdHandler;
 import com.luffbox.tickman.util.cmd.CmdOpts;
@@ -16,7 +16,7 @@ public class HelpCmd extends CmdHandler {
 	}
 
 	@Override
-	public void onCommand(MessageReceivedEvent e, GuildOpts guildData, String[] args) {
+	public void onCommand(MessageReceivedEvent e, Config config, String[] args) {
 		e.getAuthor().openPrivateChannel().queue((channel) -> {
 			EmbedBuilder eb = new EmbedBuilder();
 			eb.setColor(Color.CYAN);
@@ -24,9 +24,9 @@ public class HelpCmd extends CmdHandler {
 			eb.setDescription("Commands offered by " + tickman.getBotName() + "\nArguments: **<Required>** *[Optional]*");
 
 			for (CmdHandler cmd : tickman.cmds) {
-				if (cmd instanceof InviteCmd && !guildData.canInvite()) continue;
+				if (cmd instanceof InviteCmd && !config.canInvite()) continue;
 				if (cmd.opts.showHelp()) {
-					StringBuilder sb = new StringBuilder(guildData.getCmdPrefix() + cmd.opts.name());
+					StringBuilder sb = new StringBuilder(config.getCmdPrefix() + cmd.opts.name());
 					for (CmdArg arg : cmd.opts.args()) {
 						sb.append(" ")
 								.append(arg.required() ? "**<" : "*[")

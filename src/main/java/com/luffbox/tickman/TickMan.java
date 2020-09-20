@@ -1,12 +1,13 @@
 package com.luffbox.tickman;
 
-import com.luffbox.tickman.commands.*;
+import com.luffbox.tickman.commands.ConfigureGuildCmd;
+import com.luffbox.tickman.commands.HelpCmd;
+import com.luffbox.tickman.commands.InviteCmd;
 import com.luffbox.tickman.listeners.EventListener;
+import com.luffbox.tickman.util.cmd.CmdHandler;
 import com.luffbox.tickman.util.snowflake.InvalidSystemClockException;
 import com.luffbox.tickman.util.snowflake.SnowflakeServer;
-import com.luffbox.tickman.util.ticket.GuildOpts;
-import com.luffbox.tickman.util.cmd.CmdHandler;
-import net.dv8tion.jda.api.EmbedBuilder;
+import com.luffbox.tickman.util.ticket.Config;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
@@ -18,7 +19,10 @@ import org.apache.commons.cli.*;
 
 import javax.security.auth.login.LoginException;
 import java.io.File;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class TickMan {
 
@@ -32,16 +36,9 @@ public class TickMan {
 		if (!(DATA.exists() || DATA.mkdirs())) { System.err.println("Failed to create data directory"); }
 		if (!(GUILD_DATA.exists() || GUILD_DATA.mkdirs())) { System.err.println("Failed to create guild data directory"); }
 		if (!(TICKET_DATA.exists() || TICKET_DATA.mkdirs())) { System.err.println("Failed to create ticket data directory"); }
-
-		new Timer().schedule(new TimerTask() {
-			@Override
-			public void run() {
-				try { System.out.println("Test snowflake: " + SNOWFLAKE_SERVER.nextIdAsString()); } catch (Exception ignore) {}
-			}
-		}, 100, 100);
 	}
 
-	private static final Map<Guild, GuildOpts> guildRecords = new HashMap<>();
+	private static final Map<Guild, Config> guildConfigs = new HashMap<>();
 	private static JDA jda;
 
 	public final Set<CmdHandler> cmds = new HashSet<>();
@@ -49,7 +46,7 @@ public class TickMan {
 	private final String inviteClientId;
 
 	public String getBotName() { return botUserName; }
-	public String getInviteUrl() { return "https://discord.com/api/oauth2/authorize?client_id=" + inviteClientId + "&scope=bot&permissions=93264"; }
+	public String getInviteUrl() { return String.format("https://discord.com/api/oauth2/authorize?client_id=%s&scope=bot&permissions=93264", inviteClientId); }
 
 	public static void main(String[] args) { new TickMan(args); }
 
@@ -116,21 +113,15 @@ public class TickMan {
 		return id;
 	}
 
-	public static GuildOpts getGuildOptions(Guild g) {
-		if (g == null) { return GuildOpts.def(); }
-		createGuildOpts(g);
-		return guildRecords.containsKey(g) ? guildRecords.get(g) : GuildOpts.def();
+	public static Config getGuildConfig(Guild g) {
+		if (g == null) { return Config.def(); }
+		createGuildConfig(g);
+		return guildConfigs.containsKey(g) ? guildConfigs.get(g) : Config.def();
 	}
 
-	public static EmbedBuilder newEmbed(GuildOpts guildData) {
-		EmbedBuilder embed = new EmbedBuilder();
-		embed.setColor(guildData.getEmbedColor().intValue());
-		return embed;
-	}
-
-	private static void createGuildOpts(Guild g) {
-		if (!guildRecords.containsKey(g)) {
-			guildRecords.put(g, new GuildOpts(g));
+	private static void createGuildConfig(Guild g) {
+		if (!guildConfigs.containsKey(g)) {
+			guildConfigs.put(g, new Config(g));
 		}
 	}
 

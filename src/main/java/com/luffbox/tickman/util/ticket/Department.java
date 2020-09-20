@@ -1,11 +1,12 @@
 package com.luffbox.tickman.util.ticket;
 
+import com.github.cliftonlabs.json_simple.JsonArray;
 import com.github.cliftonlabs.json_simple.JsonObject;
 import com.luffbox.tickman.TickMan;
 import com.luffbox.tickman.util.snowflake.ITMSnowflake;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
 
-import java.io.*;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -17,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 public class Department implements ITMSnowflake {
 
 	private enum Field {
+		NAME("name"),
 		TICKET_CATEGORY("ticketCategory"),
 		SUPPORT_CHANNEL("supportChannel"),
 		SUPPORT_ROLES("supportRoles");
@@ -26,22 +28,34 @@ public class Department implements ITMSnowflake {
 	}
 
 	private final long deptId;
-	private final GuildOpts guildData;
+	private final Config config;
 	private String name;
 	private final Set<Role> supportRoles = new HashSet<>();
 	private Category ticketCategory = null;
 	private TextChannel supportChannel = null;
 
-	public Department (GuildOpts guildData, String name) {
+	public Department(Config config, JsonObject deptJson) {
+		this(config);
+		fromJson(deptJson);
+	}
+	public Department (Config config) {
 		this.deptId = TickMan.getSnowflake();
-		this.guildData = guildData;
-		this.name = name;
+		this.config = config;
 	}
 
 	@Override
 	public long getIdLong() { return deptId; }
 
+	public Config getConfig() { return config; }
+
 	public String getName() { return name; }
+
+	/**
+	 * Gets the Guild associated with this Department
+	 * @return The Guild object assocaited with this Department. May be null if a default set of Config are used
+	 * @see Config#def()
+	 */
+	public Guild getGuild() { return config.getGuild(); }
 
 	/**
 	 * Gets a Set of the current support Roles
@@ -69,9 +83,9 @@ public class Department implements ITMSnowflake {
 	 * @return true if added successfully or already in the List. Will fail if Guild is null
 	 */
 	public boolean addSupportRole(Role r) {
-		if (guildData.getGuild() == null || r == null || !r.getGuild().equals(guildData.getGuild())) { return false; }
+		if (config.getGuild() == null || r == null || !r.getGuild().equals(config.getGuild())) { return false; }
 		supportRoles.add(r);
-		guildData.save();
+		config.save();
 		return true;
 	}
 
@@ -81,9 +95,9 @@ public class Department implements ITMSnowflake {
 	 * @return true if removed successfully or not already in the List. Will fail if Guild is null
 	 */
 	public boolean removeSupportRole(Role r) {
-		if (guildData.getGuild() == null || r == null || !r.getGuild().equals(guildData.getGuild())) { return false; }
+		if (config.getGuild() == null || r == null || !r.getGuild().equals(config.getGuild())) { return false; }
 		supportRoles.remove(r);
-		guildData.save();
+		config.save();
 		return true;
 	}
 
@@ -98,9 +112,9 @@ public class Department implements ITMSnowflake {
 	 * @return true of the Category is valid. Will fail if Guild is null
 	 */
 	public boolean setTicketCategory(Category category) {
-		if (guildData.getGuild() == null || category == null || !category.getGuild().equals(guildData.getGuild())) { return false; }
+		if (config.getGuild() == null || category == null || !category.getGuild().equals(config.getGuild())) { return false; }
 		ticketCategory = category;
-		guildData.save();
+		config.save();
 		return true;
 	}
 
@@ -110,9 +124,9 @@ public class Department implements ITMSnowflake {
 	 * @return true of the ID resolves to a valid Category. Will fail if Guild is null
 	 */
 	public boolean setTicketCategoryId(String id) {
-		if (id != null && !id.isBlank() && guildData.getGuild() != null) {
+		if (id != null && !id.isBlank() && config.getGuild() != null) {
 			try {
-				Category cat = guildData.getGuild().getCategoryById(id);
+				Category cat = config.getGuild().getCategoryById(id);
 				if (cat != null) { return setTicketCategory(cat); }
 			} catch (Exception ignore) {}
 		}
@@ -125,13 +139,13 @@ public class Department implements ITMSnowflake {
 	 * @return true of the TextChannel is valid. Will fail if Guild is null
 	 */
 	public boolean setSupportChannel(TextChannel channel, boolean announce) {
-		if (guildData.getGuild() == null || channel == null || !channel.getGuild().equals(guildData.getGuild())) { return false; }
+		if (config.getGuild() == null || channel == null || !channel.getGuild().equals(config.getGuild())) { return false; }
 		supportChannel = channel;
 		if (announce) {
 			supportChannel.sendMessage("Now listening to this channel for ticket requests")
 					.queue(msg -> msg.delete().queueAfter(15, TimeUnit.SECONDS));
 		}
-		guildData.save();
+		config.save();
 		return true;
 	}
 
@@ -141,9 +155,9 @@ public class Department implements ITMSnowflake {
 	 * @return true of the ID resolves to a valid TextChannel. Will fail if Guild is null
 	 */
 	public boolean setSupportChannelId(String id, boolean announce) {
-		if (id != null && !id.isBlank() && guildData.getGuild() != null) {
+		if (id != null && !id.isBlank() && config.getGuild() != null) {
 			try {
-				GuildChannel gc = guildData.getGuild().getGuildChannelById(id);
+				GuildChannel gc = config.getGuild().getGuildChannelById(id);
 				if (gc != null && gc.getType() == ChannelType.TEXT) {
 					return setSupportChannel((TextChannel) gc, announce);
 				}
@@ -152,7 +166,21 @@ public class Department implements ITMSnowflake {
 		return false;
 	}
 
-	public JsonObject toJson() throws IOException {
+	public void fromJson(JsonObject json) {
+		setName((String) json.get(Field.NAME.path));
+		setSupportChannelId((String) json.get(Field.SUPPORT_CHANNEL.path), false);
+		setTicketCategoryId((String) json.get(Field.TICKET_CATEGORY.path));
+
+		JsonArray roleIds = (JsonArray) json.get(Field.SUPPORT_ROLES.path);
+		for (Object rid : roleIds.toArray()) {
+			try {
+				Role role = config.getGuild().getRoleById(rid.toString());
+				if (role != null) { addSupportRole(role); }
+			} catch (Exception ignore) {}
+		}
+	}
+
+	public JsonObject toJson() {
 		return new JsonObject(new HashMap<>() {
 			{
 				put(Field.TICKET_CATEGORY.path, ticketCategory != null ? ticketCategory.getId() : "");
@@ -162,5 +190,20 @@ public class Department implements ITMSnowflake {
 				put(Field.SUPPORT_ROLES.path, roles);
 			}
 		});
+	}
+
+	public EmbedBuilder newEmbed() { return config.newEmbed(); }
+
+	@Override
+	public boolean equals(Object obj) { return obj instanceof Department other && other.getIdLong() == deptId; }
+
+	@Override
+	public int hashCode() {
+		return Long.hashCode(deptId);
+	}
+
+	@Override
+	public String toString() {
+		return String.format("Department: %s (%d)", name, deptId);
 	}
 }

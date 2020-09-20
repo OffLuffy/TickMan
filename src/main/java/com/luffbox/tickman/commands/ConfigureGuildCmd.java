@@ -5,7 +5,7 @@ import com.luffbox.tickman.util.cmd.CmdArg;
 import com.luffbox.tickman.util.cmd.CmdArgType;
 import com.luffbox.tickman.util.cmd.CmdHandler;
 import com.luffbox.tickman.util.cmd.CmdOpts;
-import com.luffbox.tickman.util.ticket.GuildOpts;
+import com.luffbox.tickman.util.ticket.Config;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
@@ -43,7 +43,7 @@ public class ConfigureGuildCmd extends CmdHandler {
 	}
 
 	@Override
-	public void onCommand(MessageReceivedEvent e, GuildOpts guildData, String[] args) {
+	public void onCommand(MessageReceivedEvent e, Config config, String[] args) {
 		if (e.getMember() == null || !e.getMember().hasPermission(Permission.ADMINISTRATOR)) { return; }
 //        if (args.length > 0) {
 //            System.out.println("Property: " + args[0]);

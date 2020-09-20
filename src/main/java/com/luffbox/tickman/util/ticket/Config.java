@@ -5,6 +5,7 @@ import com.github.cliftonlabs.json_simple.JsonObject;
 import com.github.cliftonlabs.json_simple.Jsonable;
 import com.github.cliftonlabs.json_simple.Jsoner;
 import com.luffbox.tickman.TickMan;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 
 import java.io.*;
@@ -17,7 +18,7 @@ import java.util.Set;
  * Encapsulates all the Guild-specific data and allows for fetching and modifying it.
  * If the Guild is set to null, most methods that modify the data will fail.
  */
-public class GuildOpts implements Jsonable {
+public class Config implements Jsonable {
 
 	private enum Field {
 		GUILD_ID("guildId"),
@@ -26,7 +27,8 @@ public class GuildOpts implements Jsonable {
 		CMD_PREFIX("cmdPrefix"),
 		ALLOW_INVITE("allowInvite"),
 		SUPPORT_ROLES("supportRoles"),
-		EMBED_COLOR("embedColor");
+		EMBED_COLOR("embedColor"),
+		DEPARTMENTS("departments");
 
 		public String path;
 		Field(String path) { this.path = path; }
@@ -36,20 +38,17 @@ public class GuildOpts implements Jsonable {
 
 	private final Guild guild;
 	private final Set<Department> departments = new HashSet<>();
-//	private final Set<Role> supportRoles = new HashSet<>();
-//	private Category ticketCategory = null;
-//	private TextChannel supportChannel = null;
 	private String cmdPrefix = "!";
 	private boolean allowInvite = false;
 	private BigDecimal embedColor = BigDecimal.valueOf(0x33AAFF);
 
 	/**
-	 * Creates a default GuildOpts object with a null Guild. Mostly used when handling private messages
-	 * @return A GuildOpts instance populated with default values and a null Guild object.
+	 * Creates a default Config object with a null Guild. Mostly used when handling private messages
+	 * @return A Config instance populated with default values and a null Guild object.
 	 */
-	public static GuildOpts def() { return new GuildOpts(null); }
+	public static Config def() { return new Config(null); }
 
-	public GuildOpts (Guild guild) {
+	public Config(Guild guild) {
 		this.guild = guild;
 		outFile = guild == null ? null : new File(TickMan.GUILD_DATA, guild.getId() + ".json");
 		load();
@@ -63,19 +62,16 @@ public class GuildOpts implements Jsonable {
 		try (FileReader readIn = new FileReader(outFile)) {
 			JsonObject json = (JsonObject) Jsoner.deserialize(readIn);
 
-//			setTicketCategoryId((String) json.get(Field.TICKET_CATEGORY.path));
-//			setSupportChannelId((String) json.get(Field.SUPPORT_CHANNEL.path), false);
 			setCmdPrefix((String) json.get(Field.CMD_PREFIX.path));
 			setAllowInvite((boolean) json.get(Field.ALLOW_INVITE.path));
 			setEmbedColor((BigDecimal) json.get(Field.EMBED_COLOR.path));
 
-//			JsonArray roleIds = (JsonArray) json.get(Field.SUPPORT_ROLES.path);
-//			for (Object rid : roleIds.toArray()) {
-//				try {
-//					Role role = guild.getRoleById(rid.toString());
-//					if (role != null) { supportRoles.add(role); }
-//				} catch (Exception ignore) {}
-//			}
+			JsonObject depts = (JsonObject) json.get(Field.DEPARTMENTS.path);
+			for (String deptId : depts.keySet()) {
+				try {
+					departments.add(new Department(this, (JsonObject) depts.get(deptId)));
+				} catch (Exception ignore) {}
+			}
 
 		} catch (IOException e) {
 			System.err.println("Failed to read guild data file for guild: " + guild.getName() + ", file: " + outFile.getName() + ", reason: " + e.getMessage());
@@ -95,9 +91,9 @@ public class GuildOpts implements Jsonable {
 	}
 
 	/**
-	 * Gets the Guild associated with this GuildOpts
-	 * @return The Guild object assocaited with this GuildOpts. May be null if a default set of GuildOpts are used
-	 * @see #def()
+	 * Gets the Guild associated with this Config
+	 * @return The Guild object assocaited with this Config. May be null if a default set of Config are used
+	 * @see Config#def()
 	 */
 	public Guild getGuild() { return guild; }
 
@@ -250,6 +246,12 @@ public class GuildOpts implements Jsonable {
 		embedColor = color;
 	}
 
+	public EmbedBuilder newEmbed() {
+		EmbedBuilder embed = new EmbedBuilder();
+		embed.setColor(getEmbedColor().intValue());
+		return embed;
+	}
+
 	@Override
 	public String toJson() {
 		final StringWriter writable = new StringWriter();
@@ -267,6 +269,9 @@ public class GuildOpts implements Jsonable {
 				put(Field.CMD_PREFIX.path, cmdPrefix);
 				put(Field.ALLOW_INVITE.path, allowInvite);
 				put(Field.EMBED_COLOR.path, embedColor);
+				JsonObject depts = new JsonObject();
+				for (Department dept : departments) { depts.put(dept.getId(), dept.toJson()); }
+				put(Field.DEPARTMENTS.path, depts);
 
 //				Set<String> roles = new HashSet<>();
 //				for (Role r : supportRoles) { roles.add(r.getId()); }

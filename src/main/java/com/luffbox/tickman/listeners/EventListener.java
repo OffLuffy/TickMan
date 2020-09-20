@@ -2,7 +2,7 @@ package com.luffbox.tickman.listeners;
 
 import com.luffbox.tickman.TickMan;
 import com.luffbox.tickman.util.cmd.CmdHandler;
-import com.luffbox.tickman.util.ticket.GuildOpts;
+import com.luffbox.tickman.util.ticket.Config;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.ReadyEvent;
@@ -30,7 +30,7 @@ public class EventListener extends ListenerAdapter {
 			for (Guild g : guilds) {
 				if (sb.length() > 0) { sb.append(", "); }
 				sb.append(" ").append(g.getName());
-				TickMan.getGuildOptions(g);
+				TickMan.getGuildConfig(g);
 			}
 			System.out.println("Currently connected to " + guilds.size() + " guild" + (guilds.size() == 1 ? "" : "s") + ":");
 			System.out.println(sb.toString());
@@ -40,13 +40,13 @@ public class EventListener extends ListenerAdapter {
 	@Override
 	public final void onMessageReceived(MessageReceivedEvent e) {
 
-		GuildOpts data = TickMan.getGuildOptions(e.getChannelType() == ChannelType.TEXT ? e.getGuild() : null );
-		boolean hasCmdPrefix = e.getMessage().getContentRaw().startsWith(data.getCmdPrefix());
+		Config config = TickMan.getGuildConfig(e.getChannelType() == ChannelType.TEXT ? e.getGuild() : null );
+		boolean hasCmdPrefix = e.getMessage().getContentRaw().startsWith(config.getCmdPrefix());
 		if (e.getMessage().getContentRaw().isBlank() || e.getAuthor().isBot()) { return; }
 
 		if (hasCmdPrefix) { // Treat the message like a command
 			String[] msgParts = e.getMessage().getContentRaw().split("\\s+");
-			String cmd = msgParts[0].substring(data.getCmdPrefix().length()).toLowerCase(Locale.ENGLISH);
+			String cmd = msgParts[0].substring(config.getCmdPrefix().length()).toLowerCase(Locale.ENGLISH);
 			String[] args = Arrays.copyOfRange(msgParts, 1, msgParts.length);
 
 			CmdHandler selectedCmd = null;
@@ -60,7 +60,7 @@ public class EventListener extends ListenerAdapter {
 				if (e.getChannelType() == ChannelType.PRIVATE) {
 					selectedCmd.onPrivateMessage(e, args);
 				} else {
-					selectedCmd.onCommand(e, data, args);
+					selectedCmd.onCommand(e, config, args);
 					if (selectedCmd.opts.delete()) {
 						e.getMessage().delete().queueAfter(3, TimeUnit.SECONDS);
 					}

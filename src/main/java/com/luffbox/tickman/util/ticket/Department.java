@@ -11,7 +11,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 /**
  * Represents a certain category of support (i.e. Technology, Maintenance, Billing, etc)
@@ -144,7 +144,7 @@ public class Department implements ITMSnowflake {
 		supportChannel = channel;
 		if (announce) {
 			supportChannel.sendMessage("Now listening to this channel for ticket requests")
-					.queue(msg -> msg.delete().queueAfter(15, TimeUnit.SECONDS));
+					.queue(msg -> TickMan.queueLater(msg.delete(), TickMan.Duration.SHORT));
 		}
 		config.save();
 		return true;
@@ -171,25 +171,18 @@ public class Department implements ITMSnowflake {
 
 	public void removeTicket(Ticket ticket) { tickets.remove(ticket); }
 
-	public Ticket createTicket(Message msg) {
-		if (msg == null || msg.getMember() == null) { return null; }
-
-		long tid = TickMan.getSnowflake();
-		TextChannel channel = getTicketCategory().createTextChannel(String.format("Ticket_%x", tid)).complete();
-		Ticket ticket = new Ticket(tid, this, msg.getMember(), channel, msg.getContentRaw());
-
-		EmbedBuilder embed = newEmbed();
-		embed.setAuthor(msg.getAuthor().getAsTag(), null, msg.getAuthor().getAvatarUrl());
-		embed.setDescription(msg.getContentRaw());
-		embed.appendDescription("\n\n*Sent by* " + msg.getAuthor().getAsMention() + " *in* " + ((TextChannel) msg.getChannel()).getAsMention());
-		embed.addBlankField(false);
-		embed.addField("When resolved:", "Press \u274E to close the ticket or use `!close`", false);
-		channel.sendMessage(embed.build()).queue(ticketEmbed -> {
-			ticketEmbed.addReaction("\u274E").queue();
-			ticketEmbed.addReaction("\u2611").queue();
-		});
-
-		return ticket;
+	public void createTicket(final Message msg) { createTicket(msg, null, null); }
+	public void createTicket(final Message msg, @Nullable Consumer<Ticket> success) { createTicket(msg, success, null); }
+	public void createTicket(final Message msg, @Nullable Consumer<Ticket> success, @Nullable Consumer<? super Throwable> failure) {
+		if (msg == null || msg.getMember() == null) {
+			if (failure != null) { failure.accept(new NullPointerException("Message or Message Member was null")); }
+			return;
+		}
+		final long tid = TickMan.getSnowflake();
+		getTicketCategory().createTextChannel(String.format("ticket_%x", tid)).queue(channel -> {
+			Ticket ticket = new Ticket(tid, this, msg.getMember(), channel, msg.getContentRaw());
+			if (success != null) { success.accept(ticket); }
+		}, error -> { if (failure != null) failure.accept(error); });
 	}
 
 	public void fromJson(JsonObject json) {

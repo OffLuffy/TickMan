@@ -1,6 +1,9 @@
 package com.luffbox.tickman;
 
-import com.luffbox.tickman.commands.*;
+import com.luffbox.tickman.commands.ConfigureCmd;
+import com.luffbox.tickman.commands.FindTicketCmd;
+import com.luffbox.tickman.commands.HelpCmd;
+import com.luffbox.tickman.commands.InviteCmd;
 import com.luffbox.tickman.listeners.EventListener;
 import com.luffbox.tickman.util.cmd.CmdHandler;
 import com.luffbox.tickman.util.snowflake.InvalidSystemClockException;
@@ -9,7 +12,10 @@ import com.luffbox.tickman.util.ticket.Config;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.requests.GatewayIntent;
+import net.dv8tion.jda.api.requests.RestAction;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
@@ -22,14 +28,28 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 public class TickMan {
+
+	public enum Duration {
+		INST(1, TimeUnit.SECONDS),
+		SHORT(15, TimeUnit.SECONDS),
+		LONG(1, TimeUnit.MINUTES);
+
+		public final int quant;
+		public final TimeUnit unit;
+		Duration(int quant, TimeUnit unit) {
+			this.quant = quant;
+			this.unit = unit;
+		}
+	}
 
 	public static final File DATA = new File(System.getProperty("user.dir") + File.separator + "data");
 	public static final File GUILD_DATA = new File(DATA, "guilds");
 	public static final File TICKET_DATA = new File(DATA, "tickets");
 	public static final SnowflakeServer SNOWFLAKE_SERVER = new SnowflakeServer(0L, 0L);
-	public static final long TIMESTAMP_OFFSET = 22;
 
 	static {
 		if (!(DATA.exists() || DATA.mkdirs())) { System.err.println("Failed to create data directory"); }
@@ -116,6 +136,16 @@ public class TickMan {
 	public static @Nonnull Config getGuildConfig(@Nonnull Guild g) {
 		if (!guildConfigs.containsKey(g)) { guildConfigs.put(g, new Config(g)); }
 		return guildConfigs.get(g);
+	}
+
+	public static ScheduledFuture<?> queueLater(RestAction<?> action, Duration dur) {
+		return action.queueAfter(dur.quant, dur.unit);
+	}
+	public static void tempSend(MessageChannel channel, String message, Duration dur) {
+		channel.sendMessage(message).queue(msg -> msg.delete().queueAfter(dur.quant, dur.unit));
+	}
+	public static void tempSend(MessageChannel channel, MessageEmbed embed, Duration dur) {
+		channel.sendMessage(embed).queue(msg -> queueLater(msg.delete(), dur));
 	}
 
 }

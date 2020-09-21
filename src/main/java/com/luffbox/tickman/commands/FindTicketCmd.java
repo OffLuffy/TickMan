@@ -16,7 +16,6 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 public class FindTicketCmd extends CmdHandler {
 	public FindTicketCmd(TickMan tickman) {
@@ -29,7 +28,6 @@ public class FindTicketCmd extends CmdHandler {
 
 	@Override
 	public void onCommand(MessageReceivedEvent e, Config config, String[] args) {
-		// TODO: Implement ticket searching
 		if (e.getMember() == null) return;
 
 		StringBuilder sb = new StringBuilder();
@@ -50,6 +48,8 @@ public class FindTicketCmd extends CmdHandler {
 				for (Ticket ticket : dept.getTickets()) {
 					if (ticket.getAuthor().getEffectiveName().toLowerCase().contains(strArgs)) {
 						foundTickets.add(ticket);
+					} else if (ticket.getSubject().toLowerCase().contains(strArgs)) {
+						foundTickets.add(ticket);
 					}
 				}
 			}
@@ -58,8 +58,7 @@ public class FindTicketCmd extends CmdHandler {
 		if (foundTickets.size() > 0) {
 			listTickets(config, e.getMember(), e.getTextChannel(), foundTickets);
 		} else {
-			e.getChannel().sendMessage(e.getAuthor().getAsMention() + " No matching tickets found")
-					.queue(msg -> msg.delete().queueAfter(1, TimeUnit.MINUTES));
+			TickMan.tempSend(e.getChannel(), e.getAuthor().getAsMention() + " No matching tickets found", TickMan.Duration.LONG);
 		}
 
 	}

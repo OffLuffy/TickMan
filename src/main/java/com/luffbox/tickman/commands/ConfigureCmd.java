@@ -56,7 +56,8 @@ public class ConfigureCmd extends CmdHandler {
 				cmdUsage.setTitle(exeSub.aliases[0] + " usage");
 				cmdUsage.addField("Usage", config.getCmdPrefix() + "conf " + exeSub.usage(), false);
 				cmdUsage.addField("Current value", exeSub.value(config), false);
-				e.getChannel().sendMessage(cmdUsage.build()).queue(msg -> msg.delete().queueAfter(1, TimeUnit.MINUTES));
+				TickMan.tempSend(e.getChannel(), cmdUsage.build(), TickMan.Duration.LONG);
+//				e.getChannel().sendMessage(cmdUsage.build()).queue(msg -> msg.delete().queueAfter(1, TimeUnit.MINUTES));
 			}
 		} else {
 			selfDelMsg(e, "Unrecognized property type!", true);
@@ -95,14 +96,19 @@ public class ConfigureCmd extends CmdHandler {
 	}
 
 	private void noDelMsg(MessageReceivedEvent e, String message, boolean mention) {
-		e.getChannel().sendMessage((mention ? e.getAuthor().getAsMention() + " " : "") + message).queue(msg -> e.getMessage().delete().queueAfter(3, TimeUnit.SECONDS));
+		e.getChannel().sendMessage((mention ? e.getAuthor().getAsMention() + " " : "") + message).queue();
+		TickMan.queueLater(e.getMessage().delete(), TickMan.Duration.INST);
+//		e.getMessage().delete().queueAfter(TickMan.Duration.INST.quantity, TickMan.Duration.INST.unit);
 	}
 
 	private void selfDelMsg(MessageReceivedEvent e, String message, boolean mention) {
-		e.getChannel().sendMessage((mention ? e.getAuthor().getAsMention() + " " : "") + message).queue(msg -> {
-			e.getMessage().delete().queueAfter(10, TimeUnit.SECONDS);
-			msg.delete().queueAfter(10, TimeUnit.SECONDS);
-		});
+		TickMan.tempSend(e.getChannel(), (mention ? e.getAuthor().getAsMention() + " " : "") + message, TickMan.Duration.SHORT);
+		TickMan.queueLater(e.getMessage().delete(), TickMan.Duration.INST);
+//		e.getMessage().delete().queueAfter(TickMan.Duration.INST.quantity, TickMan.Duration.INST.unit);
+//		e.getChannel().sendMessage((mention ? e.getAuthor().getAsMention() + " " : "") + message).queue(msg -> {
+//			e.getMessage().delete().queueAfter(10, TimeUnit.SECONDS);
+//			msg.delete().queueAfter(10, TimeUnit.SECONDS);
+//		});
 	}
 
 }

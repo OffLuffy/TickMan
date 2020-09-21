@@ -5,8 +5,10 @@ import com.luffbox.tickman.util.cmd.CmdHandler;
 import com.luffbox.tickman.util.ticket.Config;
 import com.luffbox.tickman.util.ticket.Department;
 import com.luffbox.tickman.util.ticket.Ticket;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.events.channel.text.TextChannelDeleteEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -16,7 +18,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.TimeUnit;
 
 public class EventListener extends ListenerAdapter {
 
@@ -73,22 +74,37 @@ public class EventListener extends ListenerAdapter {
 				} else {
 					selectedCmd.onCommand(e, config, args);
 					if (selectedCmd.opts.delete()) {
-						e.getMessage().delete().queueAfter(3, TimeUnit.SECONDS);
+						TickMan.queueLater(e.getMessage().delete(), TickMan.Duration.INST);
+//						e.getMessage().delete().queueAfter(TickMan.Duration.INST.quantity, TickMan.Duration.INST.unit);
 					}
 				}
 			} else {
-				e.getChannel().sendMessage(e.getAuthor().getAsMention() + " Command not recognized! (Deleting in 10 seconds)").queue(msg -> {
-					e.getMessage().delete().queueAfter(10, TimeUnit.SECONDS);
-					msg.delete().queueAfter(10, TimeUnit.SECONDS);
+				e.getChannel().sendMessage(e.getAuthor().getAsMention() + " Command not recognized!").queue(msg -> {
+					TickMan.queueLater(e.getMessage().delete(), TickMan.Duration.INST);
+					TickMan.queueLater(msg.delete(), TickMan.Duration.SHORT);
+//					e.getMessage().delete().queueAfter(TickMan.Duration.INST.quantity, TickMan.Duration.INST.unit);
+//					msg.delete().queueAfter(TickMan.Duration.SHORT.quantity, TickMan.Duration.SHORT.unit);
 				});
 			}
 		} else { // Not a command, check if message was sent to support channel
 			for (Department dept : config.getDepartments()) {
 				if (dept.getSupportChannel() != null && dept.getSupportChannel().equals(e.getChannel())) {
-					Ticket ticket = dept.createTicket(e.getMessage());
-					e.getMessage().delete().queueAfter(1, TimeUnit.SECONDS);
-					e.getChannel().sendMessage(e.getAuthor().getAsMention() + " Please switch to " + ticket.getTicketChannel().getAsMention() + " to continue")
-							.queue(msg -> msg.delete().queueAfter(1, TimeUnit.MINUTES));
+					dept.createTicket(e.getMessage(), ticket -> {
+						EmbedBuilder embed = dept.newEmbed();
+						embed.setAuthor(ticket.getAuthor().getUser().getAsTag(), null, ticket.getAuthor().getUser().getAvatarUrl());
+						embed.setDescription(ticket.getSubject());
+						embed.appendDescription("\n\n*Sent by* " + ticket.getAuthor().getUser().getAsMention() + " *in* " + ticket.getTicketChannel().getAsMention());
+						embed.appendDescription("\n\nWhen resolved, add \u274E reaction or use `!t close` to close the ticket");
+						ticket.getTicketChannel().sendMessage(embed.build()).queue(ticketEmbed -> {
+							ticketEmbed.addReaction("\u274E").queue();
+							ticketEmbed.addReaction("\u2611").queue();
+						});
+
+//						e.getMessage().delete().queueAfter(TickMan.Duration.INST.quant, TickMan.Duration.INST.unit);
+						TickMan.queueLater(e.getMessage().delete(), TickMan.Duration.INST);
+						e.getChannel().sendMessage(e.getAuthor().getAsMention() + " Please switch to " + ticket.getTicketChannel().getAsMention() + " to continue")
+								.queue(msg -> TickMan.queueLater(msg.delete(), TickMan.Duration.LONG));
+					});
 				}
 			}
 		}

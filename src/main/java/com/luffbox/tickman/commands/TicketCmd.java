@@ -21,9 +21,8 @@ public class TicketCmd extends CmdHandler {
 	@Override
 	public void onCommand(MessageReceivedEvent e, Config config, String[] args) {
 		if (e.getChannelType() != ChannelType.TEXT) {
-			e.getChannel().sendMessage(e.getAuthor().getAsMention() + " This command must be used in a ticket channel")
-					.queue(msg -> msg.delete().queueAfter(30, TimeUnit.SECONDS));
-			if (e.getChannelType().isGuild()) { e.getMessage().delete().queueAfter(1, TimeUnit.SECONDS); }
+			TickMan.tempSend(e.getChannel(), e.getAuthor().getAsMention() + " This command must be used in a ticket channel", TickMan.Duration.SHORT);
+			if (e.getChannelType().isGuild()) { TickMan.queueLater(e.getMessage().delete(), TickMan.Duration.INST); }
 		}
 		Ticket ticket = config.getTicketByChannel((TextChannel) e.getChannel());
 		if (args.length == 0) {
@@ -33,7 +32,18 @@ public class TicketCmd extends CmdHandler {
 			embed.appendDescription(String.format("**%s%s** %s - %s", config.getCmdPrefix(), "t", "transfer *<dept>*", "Transfer the ticket to another department"));
 //			embed.appendDescription(String.format("**%s%s** %s - %s", config.getCmdPrefix(), "t", "", ""));
 
-			e.getChannel().sendMessage(embed.build()).queue(msg -> msg.delete().queueAfter(1, TimeUnit.MINUTES));
+
+			e.getChannel().sendMessage(embed.build()).queue(msg -> TickMan.queueLater(msg.delete(), TickMan.Duration.INST));
+			return;
+		}
+
+		switch (args[0]) {
+			case "close":
+				break;
+			case "transfer":
+				break;
+			default:
+				TickMan.tempSend(e.getChannel(), "Action not recognized", TickMan.Duration.SHORT);
 		}
 	}
 }

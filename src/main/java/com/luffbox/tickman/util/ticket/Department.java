@@ -48,8 +48,7 @@ public class Department implements ITMSnowflake {
 
 	/**
 	 * Gets the Guild associated with this Department
-	 * @return The Guild object assocaited with this Department. May be null if a default set of Config are used
-	 * @see Config#def()
+	 * @return The Guild object assocaited with this Department.
 	 */
 	public Guild getGuild() { return config.getGuild(); }
 
@@ -175,8 +174,9 @@ public class Department implements ITMSnowflake {
 	public Ticket createTicket(Message msg) {
 		if (msg == null || msg.getMember() == null) { return null; }
 
-		TextChannel channel = getTicketCategory().createTextChannel(msg.getMember().getEffectiveName() + "_ticket").complete();
-		Ticket ticket = new Ticket(TickMan.getSnowflake(), this, msg.getMember(), channel);
+		long tid = TickMan.getSnowflake();
+		TextChannel channel = getTicketCategory().createTextChannel(String.format("Ticket_%x", tid)).complete();
+		Ticket ticket = new Ticket(tid, this, msg.getMember(), channel, msg.getContentRaw());
 
 		EmbedBuilder embed = newEmbed();
 		embed.setAuthor(msg.getAuthor().getAsTag(), null, msg.getAuthor().getAvatarUrl());
@@ -213,8 +213,11 @@ public class Department implements ITMSnowflake {
 				JsonObject ticketJson = (JsonObject) tickets.get(ticketId);
 				Ticket.fromJson(Long.parseLong(ticketId), ticketJson, this);
 			}
-		} else {
-			new Ticket(TickMan.getSnowflake(), this, getGuild().getSelfMember(), getGuild().getDefaultChannel());
+		} else if (!getGuild().getTextChannels().isEmpty()) { // TODO: Remove debug ticket creation
+			TextChannel def = getGuild().getTextChannels().get(0);
+			for (int i = 0; i < 10; i++) {
+				new Ticket(TickMan.getSnowflake(), this, getGuild().getSelfMember(), def, "Ticket #" + i);
+			}
 		}
 	}
 

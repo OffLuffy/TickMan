@@ -8,6 +8,7 @@ import com.luffbox.tickman.util.ticket.Ticket;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.ReadyEvent;
+import net.dv8tion.jda.api.events.channel.text.TextChannelDeleteEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
@@ -40,10 +41,17 @@ public class EventListener extends ListenerAdapter {
 	}
 
 	@Override
-	public final void onMessageReceived(MessageReceivedEvent e) {
-		if (e.getMember() == null) return;
+	public void onTextChannelDelete(@NotNull TextChannelDeleteEvent e) {
+		Config config = TickMan.getGuildConfig(e.getGuild());
+		Ticket ticket = config.getTicketByChannel(e.getChannel());
+		if (ticket != null) { ticket.closeTicket(); }
+	}
 
-		Config config = TickMan.getGuildConfig(e.getChannelType() == ChannelType.TEXT ? e.getGuild() : null );
+	@Override
+	public final void onMessageReceived(MessageReceivedEvent e) {
+		if (e.getMember() == null || e.getChannelType() != ChannelType.TEXT) return;
+
+		Config config = TickMan.getGuildConfig(e.getGuild());
 		boolean hasCmdPrefix = e.getMessage().getContentRaw().startsWith(config.getCmdPrefix());
 		if (e.getMessage().getContentRaw().isBlank() || e.getAuthor().isBot()) { return; }
 

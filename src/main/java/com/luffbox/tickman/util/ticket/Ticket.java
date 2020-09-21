@@ -13,14 +13,16 @@ public class Ticket implements ITMSnowflake {
 	private Department dept;
 	private TextChannel ticketChannel;
 	private Member author;
+	private String subject;
 	// TODO: Participants?
 
-	public Ticket(long id, @Nonnull Department dept, @Nonnull Member author, @Nonnull TextChannel channel) {
+	public Ticket(long id, @Nonnull Department dept, @Nonnull Member author, @Nonnull TextChannel channel, @Nonnull String subject) {
 		this.dept = dept;
 		this.ticketId = id;
 		this.ticketChannel = channel;
 		this.author = author;
 		this.dept.addTicket(this);
+		this.subject = subject;
 		// TODO: Setup channel permissions
 	}
 
@@ -33,10 +35,11 @@ public class Ticket implements ITMSnowflake {
 
 	public Member getAuthor() { return author; }
 
+	public String getSubject() { return subject; }
+
 	/**
 	 * Gets the Guild associated with this Ticket
-	 * @return The Guild object assocaited with this Ticket. May be null if a default set of Config are used
-	 * @see Config#def()
+	 * @return The Guild object assocaited with this Ticket.
 	 */
 	public Guild getGuild() { return dept.getGuild(); }
 
@@ -58,6 +61,8 @@ public class Ticket implements ITMSnowflake {
 		return false;
 	}
 
+	public void setSubject(@Nonnull String subject) { this.subject = subject; }
+
 	public boolean setTicketChannel(TextChannel channel) {
 		if (getGuild() == null || channel == null || !channel.getGuild().equals(getGuild())) { return false; }
 		this.ticketChannel = channel;
@@ -78,6 +83,7 @@ public class Ticket implements ITMSnowflake {
 
 	public void transferDepartment(Department recvDept) {
 		Department oldDept = this.dept;
+		System.out.printf("Ticket transferred: %s (ID:%x) -- %s => %s%n", getSubject(), getIdLong(), oldDept, recvDept);
 		this.dept = recvDept;
 
 		oldDept.removeTicket(this);
@@ -97,16 +103,19 @@ public class Ticket implements ITMSnowflake {
 
 	public void closeTicket() {
 		// TODO: Save ticket transcript to file (upload to user?)
+		System.out.printf("Ticket closed: %s (ID:%x)%n", getSubject(), getIdLong());
 		ticketChannel.delete().queue();
 	}
 
 	public static Ticket fromJson(long id, JsonObject json, Department dept) {
 		Member author = null;
 		TextChannel channel = null;
+		String subject = null;
 		try { author = dept.getGuild().getMemberById((long) json.get(Config.Field.TICKET_AUTHOR.path)); } catch (Exception ignore) {}
 		try { channel = dept.getGuild().getTextChannelById((long) json.get(Config.Field.TICKET_CHANNEL.path)); } catch (Exception ignore) {}
-		if (author == null || channel == null) { return null; }
-		return new Ticket(id, dept, author, channel);
+		try { subject = (String) json.get(Config.Field.TICKET_CHANNEL.path); } catch (Exception ignore) {}
+		if (author == null || channel == null || subject == null) { return null; }
+		return new Ticket(id, dept, author, channel, subject);
 	}
 
 	public JsonObject toJson() {
@@ -116,6 +125,7 @@ public class Ticket implements ITMSnowflake {
 				put(Config.Field.TICKET_DEPT.path, getDepartment().getId());
 				put(Config.Field.TICKET_AUTHOR.path, getAuthor().getId());
 				put(Config.Field.TICKET_CHANNEL.path, getTicketChannel().getId());
+				put(Config.Field.TICKET_SUBJECT.path, getSubject());
 			}
 		});
 	}
@@ -124,12 +134,8 @@ public class Ticket implements ITMSnowflake {
 	public boolean equals(Object obj) { return eq(obj); }
 
 	@Override
-	public int hashCode() {
-		return hc();
-	}
+	public int hashCode() { return hc(); }
 
 	@Override
-	public String toString() {
-		return String.format("Ticket: %s (%d)", author.getEffectiveName(), ticketId);
-	}
+	public String toString() { return String.format("Ticket: %s (%d)", author.getEffectiveName(), ticketId); }
 }

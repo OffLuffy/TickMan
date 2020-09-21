@@ -41,7 +41,8 @@ public class Config implements Jsonable {
 		TICKET_ID("ticketId"),
 		TICKET_DEPT("ticketDept"),
 		TICKET_AUTHOR("author"),
-		TICKET_CHANNEL("ticketChannel");
+		TICKET_CHANNEL("ticketChannel"),
+		TICKET_SUBJECT("subject");
 
 		public String path;
 		Field(String path) { this.path = path; }
@@ -54,12 +55,6 @@ public class Config implements Jsonable {
 	private String cmdPrefix = "!";
 	private boolean allowInvite = false;
 	private BigDecimal embedColor = BigDecimal.valueOf(0x33AAFF);
-
-//	/**
-//	 * Creates a default Config object with a null Guild. Mostly used when handling private messages
-//	 * @return A Config instance populated with default values and a null Guild object.
-//	 */
-//	public static Config def() { return new Config(null); }
 
 	public Config(@Nonnull Guild guild) {
 		this.guild = guild;
@@ -109,8 +104,6 @@ public class Config implements Jsonable {
 	}
 
 	public void save() {
-		if (guild == null) return;
-
 		try (FileWriter fw = new FileWriter(outFile)) {
 			if (outFile.exists() || outFile.createNewFile()) { fw.write(toJson()); }
 		} catch (IOException e) {
@@ -191,6 +184,30 @@ public class Config implements Jsonable {
 				departments.remove(dept);
 			}
 		}
+	}
+
+	public Ticket getTicketByChannel(TextChannel channel) {
+		Ticket ticket = null;
+		for (Department d : getDepartments()) {
+			for (Ticket t : d.getTickets()) {
+				if (t.getTicketChannel().equals(channel)) {
+					ticket = t;
+				}
+			}
+		}
+		return ticket;
+	}
+
+	public Set<Ticket> getTicketsByMember(Member member) {
+		Set<Ticket> foundTickets = new HashSet<>();
+		for (Department d : getDepartments()) {
+			for (Ticket t : d.getTickets()) {
+				if (t.getAuthor().equals(member)) {
+					foundTickets.add(t);
+				}
+			}
+		}
+		return foundTickets;
 	}
 
 	@Override

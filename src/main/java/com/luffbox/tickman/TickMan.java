@@ -113,7 +113,7 @@ public class TickMan {
 		return id;
 	}
 
-	public static Config getGuildConfig(@Nonnull Guild g) {
+	public static @Nonnull Config getGuildConfig(@Nonnull Guild g) {
 		if (!guildConfigs.containsKey(g)) { guildConfigs.put(g, new Config(g)); }
 		return guildConfigs.get(g);
 	}

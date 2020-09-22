@@ -3,6 +3,7 @@ package com.luffbox.tickman.util.ticket;
 import com.github.cliftonlabs.json_simple.JsonArray;
 import com.github.cliftonlabs.json_simple.JsonObject;
 import com.luffbox.tickman.TickMan;
+import com.luffbox.tickman.util.Dur;
 import com.luffbox.tickman.util.snowflake.ITMSnowflake;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
@@ -144,7 +145,7 @@ public class Department implements ITMSnowflake {
 		supportChannel = channel;
 		if (announce) {
 			supportChannel.sendMessage("Now listening to this channel for ticket requests")
-					.queue(msg -> TickMan.queueLater(msg.delete(), TickMan.Duration.SHORT));
+					.queue(msg -> Dur.queueLater(msg.delete(), Dur.SHORT));
 		}
 		config.save();
 		return true;

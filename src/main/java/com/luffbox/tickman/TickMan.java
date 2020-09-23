@@ -4,8 +4,9 @@ import com.luffbox.tickman.commands.ConfigureCmd;
 import com.luffbox.tickman.commands.FindTicketCmd;
 import com.luffbox.tickman.commands.HelpCmd;
 import com.luffbox.tickman.commands.InviteCmd;
+import com.luffbox.tickman.events.ITMEvent;
 import com.luffbox.tickman.listeners.EventListener;
-import com.luffbox.tickman.util.Dur;
+import com.luffbox.tickman.util.constants.Dur;
 import com.luffbox.tickman.util.cmd.CmdHandler;
 import com.luffbox.tickman.util.snowflake.InvalidSystemClockException;
 import com.luffbox.tickman.util.snowflake.SnowflakeServer;
@@ -30,7 +31,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 public class TickMan {
 

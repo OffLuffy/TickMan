@@ -1,7 +1,7 @@
 package com.luffbox.tickman.listeners;
 
 import com.luffbox.tickman.TickMan;
-import com.luffbox.tickman.util.Dur;
+import com.luffbox.tickman.util.constants.Dur;
 import com.luffbox.tickman.util.cmd.CmdHandler;
 import com.luffbox.tickman.util.ticket.Config;
 import com.luffbox.tickman.util.ticket.Department;
@@ -12,6 +12,7 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.events.channel.text.TextChannelDeleteEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.message.guild.react.GuildMessageReactionAddEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 
@@ -46,6 +47,15 @@ public class EventListener extends ListenerAdapter {
 		Config config = TickMan.getGuildConfig(e.getGuild());
 		Ticket ticket = config.getTicketByChannel(e.getChannel());
 		if (ticket != null) { ticket.closeTicket(); }
+	}
+
+	@Override
+	public void onGuildMessageReactionAdd(@NotNull GuildMessageReactionAddEvent e) {
+		Config config = TickMan.getGuildConfig(e.getGuild());
+		Ticket ticket = config.getTicketByChannel(e.getChannel());
+		if (ticket != null) {
+
+		}
 	}
 
 	@Override

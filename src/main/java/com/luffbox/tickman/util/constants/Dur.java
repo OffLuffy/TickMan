@@ -1,6 +1,5 @@
-package com.luffbox.tickman.util;
+package com.luffbox.tickman.util.constants;
 
-import com.luffbox.tickman.TickMan;
 import net.dv8tion.jda.api.requests.RestAction;
 
 import java.util.concurrent.ScheduledFuture;

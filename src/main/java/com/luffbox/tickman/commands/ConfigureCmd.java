@@ -2,7 +2,7 @@ package com.luffbox.tickman.commands;
 
 import com.luffbox.tickman.TickMan;
 import com.luffbox.tickman.commands.conf.*;
-import com.luffbox.tickman.util.Dur;
+import com.luffbox.tickman.util.constants.Dur;
 import com.luffbox.tickman.util.cmd.*;
 import com.luffbox.tickman.util.ticket.Config;
 import com.luffbox.tickman.util.ticket.Department;

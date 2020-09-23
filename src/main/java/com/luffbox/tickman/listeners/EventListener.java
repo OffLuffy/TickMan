@@ -1,7 +1,7 @@
 package com.luffbox.tickman.listeners;
 
 import com.luffbox.tickman.TickMan;
-import com.luffbox.tickman.util.constants.Dur;
+import com.luffbox.tickman.util.constants.QueueHelper;
 import com.luffbox.tickman.util.cmd.CmdHandler;
 import com.luffbox.tickman.util.constants.TicketReaction;
 import com.luffbox.tickman.util.ticket.Config;
@@ -85,14 +85,14 @@ public class EventListener extends ListenerAdapter {
 				} else {
 					selectedCmd.onCommand(e, config, args);
 					if (selectedCmd.opts.delete()) {
-						Dur.queueLater(e.getMessage().delete(), Dur.INST);
+						QueueHelper.queueLater(e.getMessage().delete(), QueueHelper.INST);
 //						e.getMessage().delete().queueAfter(TickMan.Duration.INST.quantity, TickMan.Duration.INST.unit);
 					}
 				}
 			} else {
 				e.getChannel().sendMessage(e.getAuthor().getAsMention() + " Command not recognized!").queue(msg -> {
-					Dur.queueLater(e.getMessage().delete(), Dur.INST);
-					Dur.queueLater(msg.delete(), Dur.SHORT);
+					QueueHelper.queueLater(e.getMessage().delete(), QueueHelper.INST);
+					QueueHelper.queueLater(msg.delete(), QueueHelper.SHORT);
 //					e.getMessage().delete().queueAfter(TickMan.Duration.INST.quantity, TickMan.Duration.INST.unit);
 //					msg.delete().queueAfter(TickMan.Duration.SHORT.quantity, TickMan.Duration.SHORT.unit);
 				});
@@ -113,9 +113,9 @@ public class EventListener extends ListenerAdapter {
 						});
 
 //						e.getMessage().delete().queueAfter(TickMan.Duration.INST.quant, TickMan.Duration.INST.unit);
-						Dur.queueLater(e.getMessage().delete(), Dur.INST);
+						QueueHelper.queueLater(e.getMessage().delete(), QueueHelper.INST);
 						e.getChannel().sendMessage(e.getAuthor().getAsMention() + " Please switch to " + ticket.getTicketChannel().getAsMention() + " to continue")
-								.queue(msg -> Dur.queueLater(msg.delete(), Dur.LONG));
+								.queue(msg -> QueueHelper.queueLater(msg.delete(), QueueHelper.LONG));
 					});
 				}
 			}

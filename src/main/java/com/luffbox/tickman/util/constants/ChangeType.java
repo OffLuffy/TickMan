@@ -1,6 +1,6 @@
 package com.luffbox.tickman.util.constants;
 
-public class ChangeType {
+public final class ChangeType {
     public enum Dept {
         ROLES, CATEGORY, CHANNEL, NAME
     }

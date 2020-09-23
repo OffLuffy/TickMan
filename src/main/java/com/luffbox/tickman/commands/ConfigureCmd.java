@@ -2,7 +2,7 @@ package com.luffbox.tickman.commands;
 
 import com.luffbox.tickman.TickMan;
 import com.luffbox.tickman.commands.conf.*;
-import com.luffbox.tickman.util.constants.Dur;
+import com.luffbox.tickman.util.constants.QueueHelper;
 import com.luffbox.tickman.util.cmd.*;
 import com.luffbox.tickman.util.ticket.Config;
 import com.luffbox.tickman.util.ticket.Department;
@@ -57,7 +57,7 @@ public class ConfigureCmd extends CmdHandler {
 				cmdUsage.setTitle(exeSub.aliases[0] + " usage");
 				cmdUsage.addField("Usage", config.getCmdPrefix() + "conf " + exeSub.usage(), false);
 				cmdUsage.addField("Current value", exeSub.value(config), false);
-				TickMan.tempSend(e.getChannel(), cmdUsage.build(), Dur.LONG);
+				QueueHelper.tempSend(e.getChannel(), cmdUsage.build(), QueueHelper.LONG);
 //				e.getChannel().sendMessage(cmdUsage.build()).queue(msg -> msg.delete().queueAfter(1, TimeUnit.MINUTES));
 			}
 		} else {
@@ -98,13 +98,13 @@ public class ConfigureCmd extends CmdHandler {
 
 	private void noDelMsg(MessageReceivedEvent e, String message, boolean mention) {
 		e.getChannel().sendMessage((mention ? e.getAuthor().getAsMention() + " " : "") + message).queue();
-		TickMan.queueLater(e.getMessage().delete(), Dur.INST);
+		QueueHelper.queueLater(e.getMessage().delete(), QueueHelper.INST);
 //		e.getMessage().delete().queueAfter(TickMan.Duration.INST.quantity, TickMan.Duration.INST.unit);
 	}
 
 	private void selfDelMsg(MessageReceivedEvent e, String message, boolean mention) {
-		TickMan.tempSend(e.getChannel(), (mention ? e.getAuthor().getAsMention() + " " : "") + message, Dur.SHORT);
-		Dur.queueLater(e.getMessage().delete(), Dur.INST);
+		QueueHelper.tempSend(e.getChannel(), (mention ? e.getAuthor().getAsMention() + " " : "") + message, QueueHelper.SHORT);
+		QueueHelper.queueLater(e.getMessage().delete(), QueueHelper.INST);
 //		e.getMessage().delete().queueAfter(TickMan.Duration.INST.quantity, TickMan.Duration.INST.unit);
 //		e.getChannel().sendMessage((mention ? e.getAuthor().getAsMention() + " " : "") + message).queue(msg -> {
 //			e.getMessage().delete().queueAfter(10, TimeUnit.SECONDS);

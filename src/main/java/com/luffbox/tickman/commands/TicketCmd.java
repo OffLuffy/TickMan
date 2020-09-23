@@ -1,7 +1,7 @@
 package com.luffbox.tickman.commands;
 
 import com.luffbox.tickman.TickMan;
-import com.luffbox.tickman.util.constants.Dur;
+import com.luffbox.tickman.util.constants.QueueHelper;
 import com.luffbox.tickman.util.cmd.*;
 import com.luffbox.tickman.util.ticket.Config;
 import com.luffbox.tickman.util.ticket.Ticket;
@@ -20,8 +20,8 @@ public class TicketCmd extends CmdHandler {
 	@Override
 	public void onCommand(MessageReceivedEvent e, Config config, String[] args) {
 		if (e.getChannelType() != ChannelType.TEXT) {
-			TickMan.tempSend(e.getChannel(), e.getAuthor().getAsMention() + " This command must be used in a ticket channel", Dur.SHORT);
-			if (e.getChannelType().isGuild()) { Dur.queueLater(e.getMessage().delete(), Dur.INST); }
+			QueueHelper.tempSend(e.getChannel(), e.getAuthor().getAsMention() + " This command must be used in a ticket channel", QueueHelper.SHORT);
+			if (e.getChannelType().isGuild()) { QueueHelper.queueLater(e.getMessage().delete(), QueueHelper.INST); }
 		}
 		Ticket ticket = config.getTicketByChannel((TextChannel) e.getChannel());
 		if (args.length == 0) {
@@ -33,7 +33,7 @@ public class TicketCmd extends CmdHandler {
 //			embed.appendDescription(String.format("**%s%s** %s - %s", config.getCmdPrefix(), "t", "", ""));
 
 
-			e.getChannel().sendMessage(embed.build()).queue(msg -> Dur.queueLater(msg.delete(), Dur.INST));
+			e.getChannel().sendMessage(embed.build()).queue(msg -> QueueHelper.queueLater(msg.delete(), QueueHelper.INST));
 			return;
 		}
 
@@ -45,7 +45,7 @@ public class TicketCmd extends CmdHandler {
 			case "invite":
 				break;
 			default:
-				TickMan.tempSend(e.getChannel(), "Action not recognized", Dur.SHORT);
+				QueueHelper.tempSend(e.getChannel(), "Action not recognized", QueueHelper.SHORT);
 		}
 	}
 }

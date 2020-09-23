@@ -5,10 +5,12 @@ import com.github.cliftonlabs.json_simple.JsonObject;
 import com.luffbox.tickman.TickMan;
 import com.luffbox.tickman.events.TMEventManager;
 import com.luffbox.tickman.util.constants.ChangeType;
-import com.luffbox.tickman.util.constants.Dur;
+import com.luffbox.tickman.util.constants.QueueHelper;
+import com.luffbox.tickman.util.constants.PermHelper;
 import com.luffbox.tickman.util.snowflake.ITMSnowflake;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.requests.restaction.ChannelAction;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -20,12 +22,6 @@ import java.util.function.Consumer;
  * Represents a certain category of support (i.e. Technology, Maintenance, Billing, etc)
  */
 public class Department implements ITMSnowflake {
-
-	private enum Field {;
-
-		public String path;
-		Field(String path) { this.path = path; }
-	}
 
 	private final long deptId;
 	private final Config config;
@@ -158,7 +154,7 @@ public class Department implements ITMSnowflake {
 		supportChannel = channel;
 		if (announce) {
 			supportChannel.sendMessage("Now listening to this channel for ticket requests")
-					.queue(msg -> Dur.queueLater(msg.delete(), Dur.SHORT));
+					.queue(msg -> QueueHelper.queueLater(msg.delete(), QueueHelper.SHORT));
 		}
 		config.save();
 		TMEventManager.departmentChange(this, ChangeType.Dept.CHANNEL);
@@ -194,7 +190,13 @@ public class Department implements ITMSnowflake {
 			return;
 		}
 		final long tid = TickMan.getSnowflake();
-		getTicketCategory().createTextChannel(String.format("ticket_%x", tid)).queue(channel -> {
+		ChannelAction<TextChannel> ca = getTicketCategory().createTextChannel(String.format("ticket_%x", tid));
+		// TODO: Add channel support role overrides and member override for msg.getMember()
+		for (Role r : supportRoles) {
+			ca = ca.addRolePermissionOverride(r.getIdLong(), PermHelper.getAllowedTicketPerms(), null);
+		}
+		ca = ca.addMemberPermissionOverride(msg.getMember().getIdLong(), PermHelper.getAllowedTicketPerms(), null);
+		ca.queue(channel -> {
 			Ticket ticket = new Ticket(tid, this, msg.getMember(), channel, msg.getContentRaw());
 			if (success != null) {
 				success.accept(ticket);

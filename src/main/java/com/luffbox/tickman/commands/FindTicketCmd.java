@@ -1,7 +1,7 @@
 package com.luffbox.tickman.commands;
 
 import com.luffbox.tickman.TickMan;
-import com.luffbox.tickman.util.constants.Dur;
+import com.luffbox.tickman.util.constants.QueueHelper;
 import com.luffbox.tickman.util.cmd.CmdArg;
 import com.luffbox.tickman.util.cmd.CmdArgType;
 import com.luffbox.tickman.util.cmd.CmdHandler;
@@ -59,7 +59,7 @@ public class FindTicketCmd extends CmdHandler {
 		if (foundTickets.size() > 0) {
 			listTickets(config, e.getMember(), e.getTextChannel(), foundTickets);
 		} else {
-			TickMan.tempSend(e.getChannel(), e.getAuthor().getAsMention() + " No matching tickets found", Dur.LONG);
+			QueueHelper.tempSend(e.getChannel(), e.getAuthor().getAsMention() + " No matching tickets found", QueueHelper.LONG);
 		}
 
 	}

@@ -8,17 +8,13 @@ import com.luffbox.tickman.events.TMListenerAdapter;
 import com.luffbox.tickman.listeners.EventListener;
 import com.luffbox.tickman.listeners.TMEventListener;
 import com.luffbox.tickman.util.cmd.CmdHandler;
-import com.luffbox.tickman.util.constants.Dur;
 import com.luffbox.tickman.util.snowflake.InvalidSystemClockException;
 import com.luffbox.tickman.util.snowflake.SnowflakeServer;
 import com.luffbox.tickman.util.ticket.Config;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.requests.GatewayIntent;
-import net.dv8tion.jda.api.requests.RestAction;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
@@ -31,7 +27,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ScheduledFuture;
 
 public class TickMan {
 
@@ -127,16 +122,6 @@ public class TickMan {
 	public static @Nonnull Config getGuildConfig(@Nonnull Guild g) {
 		if (!guildConfigs.containsKey(g)) { guildConfigs.put(g, new Config(g)); }
 		return guildConfigs.get(g);
-	}
-
-	public static ScheduledFuture<?> queueLater(RestAction<?> action, Dur dur) {
-		return action.queueAfter(dur.quant, dur.unit);
-	}
-	public static void tempSend(MessageChannel channel, String message, Dur dur) {
-		channel.sendMessage(message).queue(msg -> msg.delete().queueAfter(dur.quant, dur.unit));
-	}
-	public static void tempSend(MessageChannel channel, MessageEmbed embed, Dur dur) {
-		channel.sendMessage(embed).queue(msg -> queueLater(msg.delete(), dur));
 	}
 
 	public static void addListener(TMListenerAdapter listener) {

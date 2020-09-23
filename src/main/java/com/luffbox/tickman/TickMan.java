@@ -4,10 +4,11 @@ import com.luffbox.tickman.commands.ConfigureCmd;
 import com.luffbox.tickman.commands.FindTicketCmd;
 import com.luffbox.tickman.commands.HelpCmd;
 import com.luffbox.tickman.commands.InviteCmd;
-import com.luffbox.tickman.events.ITMEvent;
+import com.luffbox.tickman.events.TMListenerAdapter;
 import com.luffbox.tickman.listeners.EventListener;
-import com.luffbox.tickman.util.constants.Dur;
+import com.luffbox.tickman.listeners.TMEventListener;
 import com.luffbox.tickman.util.cmd.CmdHandler;
+import com.luffbox.tickman.util.constants.Dur;
 import com.luffbox.tickman.util.snowflake.InvalidSystemClockException;
 import com.luffbox.tickman.util.snowflake.SnowflakeServer;
 import com.luffbox.tickman.util.ticket.Config;
@@ -38,6 +39,8 @@ public class TickMan {
 	public static final File GUILD_DATA = new File(DATA, "guilds");
 	public static final File TICKET_DATA = new File(DATA, "tickets");
 	public static final SnowflakeServer SNOWFLAKE_SERVER = new SnowflakeServer(0L, 0L);
+
+	public static final Set<TMListenerAdapter> listeners = new HashSet<>();
 
 	static {
 		if (!(DATA.exists() || DATA.mkdirs())) { System.err.println("Failed to create data directory"); }
@@ -100,9 +103,9 @@ public class TickMan {
 		cmds.add(new ConfigureCmd(this));
 		cmds.add(new FindTicketCmd(this));
 
-	}
+		addListener(new TMEventListener());
 
-	private void methodToCallWhenVariableIsNotNull() {}
+	}
 
 	private void confBuilder (JDABuilder builder) {
 		builder.disableCache(CacheFlag.ACTIVITY);
@@ -135,5 +138,10 @@ public class TickMan {
 	public static void tempSend(MessageChannel channel, MessageEmbed embed, Dur dur) {
 		channel.sendMessage(embed).queue(msg -> queueLater(msg.delete(), dur));
 	}
+
+	public static void addListener(TMListenerAdapter listener) {
+		listeners.add(listener);
+	}
+	public static Set<TMListenerAdapter> getListeners() { return Set.copyOf(listeners); }
 
 }

@@ -3,6 +3,8 @@ package com.luffbox.tickman.util.ticket;
 import com.github.cliftonlabs.json_simple.JsonArray;
 import com.github.cliftonlabs.json_simple.JsonObject;
 import com.luffbox.tickman.TickMan;
+import com.luffbox.tickman.events.TMEventManager;
+import com.luffbox.tickman.util.constants.DeptChangeType;
 import com.luffbox.tickman.util.constants.Dur;
 import com.luffbox.tickman.util.snowflake.ITMSnowflake;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -38,6 +40,7 @@ public class Department implements ITMSnowflake {
 		this.config = config;
 		this.name = name;
 		if (json != null) { fromJson(json); }
+		TMEventManager.onDepartmentLoad(this);
 	}
 
 	@Override
@@ -77,53 +80,63 @@ public class Department implements ITMSnowflake {
 	 */
 	public Set<Ticket> getTickets() { return Set.copyOf(tickets); }
 
-	public void setName(String name) { this.name = name; }
+	public void setName(String name) {
+		this.name = name;
+		TMEventManager.onDepartmentChange(this, DeptChangeType.NAME);
+	}
 
 	/**
 	 * Adds a Role to the Guild's List of support Roles
 	 * @param r The Role to add
-	 * @return true if added successfully or already in the List. Will fail if Guild is null
+	 * @return true if added successfully or already in the List.
 	 */
 	public boolean addSupportRole(Role r) {
 		if (getGuild() == null || r == null || !r.getGuild().equals(getGuild())) { return false; }
 		supportRoles.add(r);
 		config.save();
+		TMEventManager.onDepartmentChange(this, DeptChangeType.ROLES);
 		return true;
 	}
 
 	/**
 	 * Removes a Role from the Guild's List of support Roles
 	 * @param r The Role to remove
-	 * @return true if removed successfully or not already in the List. Will fail if Guild is null
+	 * @return true if removed successfully or not already in the List.
 	 */
 	public boolean removeSupportRole(Role r) {
 		if (getGuild() == null || r == null || !r.getGuild().equals(getGuild())) { return false; }
 		supportRoles.remove(r);
 		config.save();
+		TMEventManager.onDepartmentChange(this, DeptChangeType.ROLES);
 		return true;
 	}
 
 	/**
 	 * Remotes all Roles from the support Roles List
 	 */
-	public void clearSupportRoles() { supportRoles.clear(); }
+	public void clearSupportRoles() {
+		supportRoles.clear();
+		config.save();
+		TMEventManager.onDepartmentChange(this, DeptChangeType.ROLES);
+	}
 
 	/**
 	 * Sets the Category used to contain Ticket Channels
 	 * @param category The Category intended to contain Tickets Channels
-	 * @return true of the Category is valid. Will fail if Guild is null
+	 * @return true of the Category is valid.
 	 */
 	public boolean setTicketCategory(Category category) {
 		if (getGuild() == null || category == null || !category.getGuild().equals(getGuild())) { return false; }
 		ticketCategory = category;
 		config.save();
+		TMEventManager.onDepartmentChange(this, DeptChangeType.CATEGORY);
 		return true;
 	}
 
 	/**
 	 * Sets the Category used to contain Ticket Channels
 	 * @param id The ID of a Category intended to contain Ticket Channels
-	 * @return true of the ID resolves to a valid Category. Will fail if Guild is null
+	 * @return true of the ID resolves to a valid Category.
 	 */
 	public boolean setTicketCategoryId(String id) {
 		if (id != null && !id.isBlank() && getGuild() != null) {
@@ -138,7 +151,7 @@ public class Department implements ITMSnowflake {
 	/**
 	 * Sets the TextChannel used to create Tickets
 	 * @param channel The TextChannel intended to handle requests and convert them into Tickets
-	 * @return true of the TextChannel is valid. Will fail if Guild is null
+	 * @return true of the TextChannel is valid.
 	 */
 	public boolean setSupportChannel(TextChannel channel, boolean announce) {
 		if (getGuild() == null || channel == null || !channel.getGuild().equals(getGuild())) { return false; }
@@ -148,13 +161,14 @@ public class Department implements ITMSnowflake {
 					.queue(msg -> Dur.queueLater(msg.delete(), Dur.SHORT));
 		}
 		config.save();
+		TMEventManager.onDepartmentChange(this, DeptChangeType.CHANNEL);
 		return true;
 	}
 
 	/**
 	 * Sets the TextChannel used to create Tickets
 	 * @param id The ID of a TextChannel intended to handle requests and convert them into Tickets
-	 * @return true of the ID resolves to a valid TextChannel. Will fail if Guild is null
+	 * @return true of the ID resolves to a valid TextChannel.
 	 */
 	public boolean setSupportChannelId(String id, boolean announce) {
 		if (id != null && !id.isBlank() && getGuild() != null) {
@@ -182,7 +196,10 @@ public class Department implements ITMSnowflake {
 		final long tid = TickMan.getSnowflake();
 		getTicketCategory().createTextChannel(String.format("ticket_%x", tid)).queue(channel -> {
 			Ticket ticket = new Ticket(tid, this, msg.getMember(), channel, msg.getContentRaw());
-			if (success != null) { success.accept(ticket); }
+			if (success != null) {
+				success.accept(ticket);
+				TMEventManager.onTicketCreate(ticket);
+			}
 		}, error -> { if (failure != null) failure.accept(error); });
 	}
 
@@ -205,12 +222,15 @@ public class Department implements ITMSnowflake {
 		if (tickets != null && !tickets.isEmpty()) {
 			for (String ticketId : tickets.keySet()) {
 				JsonObject ticketJson = (JsonObject) tickets.get(ticketId);
-				Ticket.fromJson(Long.parseLong(ticketId), ticketJson, this);
+				Ticket ticket = Ticket.fromJson(Long.parseLong(ticketId), ticketJson, this);
+				TMEventManager.onTicketLoad(ticket);
 			}
 		} else if (!getGuild().getTextChannels().isEmpty()) { // TODO: Remove debug ticket creation
 			TextChannel def = getGuild().getTextChannels().get(0);
 			for (int i = 0; i < 10; i++) {
-				new Ticket(TickMan.getSnowflake(), this, getGuild().getSelfMember(), def, "Ticket #" + i);
+				TMEventManager.onTicketCreate(
+					new Ticket(TickMan.getSnowflake(), this, getGuild().getSelfMember(), def, "Ticket #" + i)
+				);
 			}
 		}
 	}

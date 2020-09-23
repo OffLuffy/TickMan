@@ -1,6 +1,7 @@
 package com.luffbox.tickman.util.ticket;
 
 import com.github.cliftonlabs.json_simple.JsonObject;
+import com.luffbox.tickman.events.TMEventManager;
 import com.luffbox.tickman.util.snowflake.ITMSnowflake;
 import net.dv8tion.jda.api.entities.*;
 
@@ -99,12 +100,19 @@ public class Ticket implements ITMSnowflake {
 							.queue(unused -> msg.editMessage(":white_check_mark: Transferred ticket to " + recvDept.getName())
 									.queue()));
 		}
+		TMEventManager.onTicketTransfer(this, oldDept, recvDept);
 	}
 
-	public void closeTicket() {
+	public void closeTicket(boolean destroy) {
 		// TODO: Save ticket transcript to file (upload to user?)
 		System.out.printf("Ticket closed: %s (ID:%x)%n", getSubject(), getIdLong());
 		ticketChannel.delete().queue();
+		getDepartment().removeTicket(this);
+		if (destroy) {
+			TMEventManager.onTicketDestroy(this);
+		} else {
+			TMEventManager.onTicketClose(this);
+		}
 	}
 
 	public static Ticket fromJson(long id, JsonObject json, Department dept) {

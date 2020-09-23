@@ -46,7 +46,7 @@ public class EventListener extends ListenerAdapter {
 	public void onTextChannelDelete(@NotNull TextChannelDeleteEvent e) {
 		Config config = TickMan.getGuildConfig(e.getGuild());
 		Ticket ticket = config.getTicketByChannel(e.getChannel());
-		if (ticket != null) { ticket.closeTicket(); }
+		if (ticket != null) { ticket.closeTicket(true); }
 	}
 
 	@Override

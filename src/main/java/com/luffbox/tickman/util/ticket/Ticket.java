@@ -2,11 +2,14 @@ package com.luffbox.tickman.util.ticket;
 
 import com.github.cliftonlabs.json_simple.JsonObject;
 import com.luffbox.tickman.events.TMEventManager;
+import com.luffbox.tickman.util.constants.ChangeType;
 import com.luffbox.tickman.util.snowflake.ITMSnowflake;
 import net.dv8tion.jda.api.entities.*;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 public class Ticket implements ITMSnowflake {
 
@@ -15,7 +18,7 @@ public class Ticket implements ITMSnowflake {
 	private TextChannel ticketChannel;
 	private Member author;
 	private String subject;
-	// TODO: Participants?
+	private final Set<Member> participants = new HashSet<>();
 
 	public Ticket(long id, @Nonnull Department dept, @Nonnull Member author, @Nonnull TextChannel channel, @Nonnull String subject) {
 		this.dept = dept;
@@ -38,6 +41,8 @@ public class Ticket implements ITMSnowflake {
 
 	public String getSubject() { return subject; }
 
+	public Set<Member> getParticipants() { return Set.copyOf(participants); }
+
 	/**
 	 * Gets the Guild associated with this Ticket
 	 * @return The Guild object assocaited with this Ticket.
@@ -48,6 +53,7 @@ public class Ticket implements ITMSnowflake {
 		if (getGuild() == null || author == null || !author.getGuild().equals(getGuild())) { return false; }
 		this.author = author;
 		dept.getConfig().save();
+		TMEventManager.ticketChange(this, ChangeType.Ticket.AUTHOR);
 		return true;
 	}
 	public boolean setAuthorId(String id) {
@@ -62,12 +68,16 @@ public class Ticket implements ITMSnowflake {
 		return false;
 	}
 
-	public void setSubject(@Nonnull String subject) { this.subject = subject; }
+	public void setSubject(@Nonnull String subject) {
+		this.subject = subject;
+		TMEventManager.ticketChange(this, ChangeType.Ticket.SUBJECT);
+	}
 
 	public boolean setTicketChannel(TextChannel channel) {
 		if (getGuild() == null || channel == null || !channel.getGuild().equals(getGuild())) { return false; }
 		this.ticketChannel = channel;
 		dept.getConfig().save();
+		TMEventManager.ticketChange(this, ChangeType.Ticket.CHANNEL);
 		return true;
 	}
 	public boolean setTicketChannelId(String id) {
@@ -100,7 +110,7 @@ public class Ticket implements ITMSnowflake {
 							.queue(unused -> msg.editMessage(":white_check_mark: Transferred ticket to " + recvDept.getName())
 									.queue()));
 		}
-		TMEventManager.onTicketTransfer(this, oldDept, recvDept);
+		TMEventManager.ticketTransfer(this, oldDept, recvDept);
 	}
 
 	public void closeTicket(boolean destroy) {
@@ -109,11 +119,18 @@ public class Ticket implements ITMSnowflake {
 		ticketChannel.delete().queue();
 		getDepartment().removeTicket(this);
 		if (destroy) {
-			TMEventManager.onTicketDestroy(this);
+			TMEventManager.ticketDestroy(this);
 		} else {
-			TMEventManager.onTicketClose(this);
+			TMEventManager.ticketClose(this);
 		}
 	}
+
+	public void addParticipant(@Nonnull Member participant) {
+		participants.add(participant);
+		TMEventManager.ticketInvite(this, participant);
+	}
+
+	public void removeParticipant(@Nonnull Member participant) { participants.remove(participant); }
 
 	public static Ticket fromJson(long id, JsonObject json, Department dept) {
 		Member author = null;
@@ -129,7 +146,6 @@ public class Ticket implements ITMSnowflake {
 	public JsonObject toJson() {
 		return new JsonObject(new HashMap<>() {
 			{
-//				put(Config.Field.TICKET_ID.path, getId());
 				put(Config.Field.TICKET_DEPT.path, getDepartment().getId());
 				put(Config.Field.TICKET_AUTHOR.path, getAuthor().getId());
 				put(Config.Field.TICKET_CHANNEL.path, getTicketChannel().getId());

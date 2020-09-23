@@ -3,6 +3,7 @@ package com.luffbox.tickman.listeners;
 import com.luffbox.tickman.TickMan;
 import com.luffbox.tickman.util.constants.Dur;
 import com.luffbox.tickman.util.cmd.CmdHandler;
+import com.luffbox.tickman.util.constants.TicketReaction;
 import com.luffbox.tickman.util.ticket.Config;
 import com.luffbox.tickman.util.ticket.Department;
 import com.luffbox.tickman.util.ticket.Ticket;
@@ -104,10 +105,11 @@ public class EventListener extends ListenerAdapter {
 						embed.setAuthor(ticket.getAuthor().getUser().getAsTag(), null, ticket.getAuthor().getUser().getAvatarUrl());
 						embed.setDescription(ticket.getSubject());
 						embed.appendDescription("\n\n*Sent by* " + ticket.getAuthor().getUser().getAsMention() + " *in* " + ticket.getTicketChannel().getAsMention());
-						embed.appendDescription("\n\nWhen resolved, add \u274E reaction or use `!t close` to close the ticket");
+						embed.appendDescription("\n\nWhen resolved, add " + TicketReaction.CLOSE.emote + " reaction or use `!t close` to close the ticket");
 						ticket.getTicketChannel().sendMessage(embed.build()).queue(ticketEmbed -> {
-							ticketEmbed.addReaction("\u274E").queue();
-							ticketEmbed.addReaction("\u2611").queue();
+							for (TicketReaction r : TicketReaction.values()) {
+								ticketEmbed.addReaction(r.emote).queue();
+							}
 						});
 
 //						e.getMessage().delete().queueAfter(TickMan.Duration.INST.quant, TickMan.Duration.INST.unit);

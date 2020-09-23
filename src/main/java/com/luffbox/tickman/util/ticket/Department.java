@@ -4,7 +4,7 @@ import com.github.cliftonlabs.json_simple.JsonArray;
 import com.github.cliftonlabs.json_simple.JsonObject;
 import com.luffbox.tickman.TickMan;
 import com.luffbox.tickman.events.TMEventManager;
-import com.luffbox.tickman.util.constants.DeptChangeType;
+import com.luffbox.tickman.util.constants.ChangeType;
 import com.luffbox.tickman.util.constants.Dur;
 import com.luffbox.tickman.util.snowflake.ITMSnowflake;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -40,7 +40,7 @@ public class Department implements ITMSnowflake {
 		this.config = config;
 		this.name = name;
 		if (json != null) { fromJson(json); }
-		TMEventManager.onDepartmentLoad(this);
+		TMEventManager.departmentLoad(this);
 	}
 
 	@Override
@@ -82,7 +82,7 @@ public class Department implements ITMSnowflake {
 
 	public void setName(String name) {
 		this.name = name;
-		TMEventManager.onDepartmentChange(this, DeptChangeType.NAME);
+		TMEventManager.departmentChange(this, ChangeType.Dept.NAME);
 	}
 
 	/**
@@ -94,7 +94,7 @@ public class Department implements ITMSnowflake {
 		if (getGuild() == null || r == null || !r.getGuild().equals(getGuild())) { return false; }
 		supportRoles.add(r);
 		config.save();
-		TMEventManager.onDepartmentChange(this, DeptChangeType.ROLES);
+		TMEventManager.departmentChange(this, ChangeType.Dept.ROLES);
 		return true;
 	}
 
@@ -107,7 +107,7 @@ public class Department implements ITMSnowflake {
 		if (getGuild() == null || r == null || !r.getGuild().equals(getGuild())) { return false; }
 		supportRoles.remove(r);
 		config.save();
-		TMEventManager.onDepartmentChange(this, DeptChangeType.ROLES);
+		TMEventManager.departmentChange(this, ChangeType.Dept.ROLES);
 		return true;
 	}
 
@@ -117,7 +117,7 @@ public class Department implements ITMSnowflake {
 	public void clearSupportRoles() {
 		supportRoles.clear();
 		config.save();
-		TMEventManager.onDepartmentChange(this, DeptChangeType.ROLES);
+		TMEventManager.departmentChange(this, ChangeType.Dept.ROLES);
 	}
 
 	/**
@@ -129,7 +129,7 @@ public class Department implements ITMSnowflake {
 		if (getGuild() == null || category == null || !category.getGuild().equals(getGuild())) { return false; }
 		ticketCategory = category;
 		config.save();
-		TMEventManager.onDepartmentChange(this, DeptChangeType.CATEGORY);
+		TMEventManager.departmentChange(this, ChangeType.Dept.CATEGORY);
 		return true;
 	}
 
@@ -161,7 +161,7 @@ public class Department implements ITMSnowflake {
 					.queue(msg -> Dur.queueLater(msg.delete(), Dur.SHORT));
 		}
 		config.save();
-		TMEventManager.onDepartmentChange(this, DeptChangeType.CHANNEL);
+		TMEventManager.departmentChange(this, ChangeType.Dept.CHANNEL);
 		return true;
 	}
 
@@ -198,7 +198,7 @@ public class Department implements ITMSnowflake {
 			Ticket ticket = new Ticket(tid, this, msg.getMember(), channel, msg.getContentRaw());
 			if (success != null) {
 				success.accept(ticket);
-				TMEventManager.onTicketCreate(ticket);
+				TMEventManager.ticketCreate(ticket);
 			}
 		}, error -> { if (failure != null) failure.accept(error); });
 	}
@@ -223,21 +223,13 @@ public class Department implements ITMSnowflake {
 			for (String ticketId : tickets.keySet()) {
 				JsonObject ticketJson = (JsonObject) tickets.get(ticketId);
 				Ticket ticket = Ticket.fromJson(Long.parseLong(ticketId), ticketJson, this);
-				TMEventManager.onTicketLoad(ticket);
-			}
-		} else if (!getGuild().getTextChannels().isEmpty()) { // TODO: Remove debug ticket creation
-			TextChannel def = getGuild().getTextChannels().get(0);
-			for (int i = 0; i < 10; i++) {
-				TMEventManager.onTicketCreate(
-					new Ticket(TickMan.getSnowflake(), this, getGuild().getSelfMember(), def, "Ticket #" + i)
-				);
+				TMEventManager.ticketLoad(ticket);
 			}
 		}
 	}
 
 	public JsonObject toJson() {
 		return new JsonObject() { {
-//			put(Config.Field.DEPT_ID.path, getId());
 			put(Config.Field.DEPT_NAME.path, name);
 			put(Config.Field.DEPT_CATEGORY.path, ticketCategory != null ? ticketCategory.getId() : "");
 			put(Config.Field.DEPT_CHANNEL.path, supportChannel != null ? supportChannel.getId() : "");

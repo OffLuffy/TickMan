@@ -42,6 +42,8 @@ public class Department implements ITMSnowflake {
 	@Override
 	public long getIdLong() { return deptId; }
 
+	public TickMan tickManInst() { return config.tickManInst(); }
+
 	public Config getConfig() { return config; }
 
 	public String getName() { return name; }

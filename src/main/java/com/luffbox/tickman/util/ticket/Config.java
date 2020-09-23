@@ -51,6 +51,7 @@ public class Config implements Jsonable {
 	}
 
 	private final File outFile;
+	private final TickMan tickman;
 
 	private final Guild guild;
 	private final Set<Department> departments = new HashSet<>();
@@ -60,11 +61,14 @@ public class Config implements Jsonable {
 
 	private boolean isLoading = false;
 
-	public Config(@Nonnull Guild guild) {
+	public Config(@Nonnull TickMan tickman, @Nonnull Guild guild) {
+		this.tickman = tickman;
 		this.guild = guild;
 		outFile = new File(TickMan.GUILD_DATA, guild.getId() + ".json");
 		load();
 	}
+
+	public TickMan tickManInst() { return tickman; }
 
 	public void load() {
 		isLoading = true;

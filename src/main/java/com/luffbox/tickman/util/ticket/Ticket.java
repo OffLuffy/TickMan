@@ -8,8 +8,7 @@ import com.luffbox.tickman.util.snowflake.ITMSnowflake;
 import net.dv8tion.jda.api.entities.*;
 
 import javax.annotation.Nonnull;
-import java.io.File;
-import java.text.SimpleDateFormat;
+import java.io.*;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,6 +37,8 @@ public class Ticket implements ITMSnowflake {
 	@Override
 	public long getIdLong() { return ticketId; }
 
+	public TickMan tickManInst() { return dept.tickManInst(); }
+
 	public Department getDepartment() { return dept; }
 
 	public TextChannel getTicketChannel() { return ticketChannel; }
@@ -47,6 +48,8 @@ public class Ticket implements ITMSnowflake {
 	public String getSubject() { return subject; }
 
 	public Set<Member> getParticipants() { return Set.copyOf(participants); }
+
+	public File getLogFile() { return logFile; }
 
 	/**
 	 * Gets the Guild associated with this Ticket
@@ -121,7 +124,12 @@ public class Ticket implements ITMSnowflake {
 	public void closeTicket(boolean wasDestroyed) {
 		// TODO: Save ticket transcript to file (upload to user?)
 		System.out.printf("Ticket closed: %s (ID:%x)%n", getSubject(), getIdLong());
-
+		getAuthor().getUser().openPrivateChannel().queue(channel -> {
+			channel.sendMessage("**" + getGuild().getName() + "** - *" + tickManInst().getBotName()
+					+ " Ticket System*\nYour ticket was closed! For your records, here is a copy of the transcript.")
+					.queue();
+			channel.sendFile(getLogFile(), String.format("TicketLog_%x.txt", getIdLong())).queue();
+		});
 		ticketChannel.delete().queue();
 		getDepartment().removeTicket(this);
 		if (wasDestroyed) {
@@ -137,6 +145,13 @@ public class Ticket implements ITMSnowflake {
 	}
 
 	public void removeParticipant(@Nonnull Member participant) { participants.remove(participant); }
+
+	public void appendToLog(String msg, Member from) {
+		try (FileWriter fw = new FileWriter(getLogFile(), true);
+			 BufferedWriter bw = new BufferedWriter(fw); PrintWriter pw = new PrintWriter(bw)) {
+			pw.printf("%s (%s) : %s%n", from.getEffectiveName(), from.getUser().getId(), msg);
+		} catch (IOException ignore) {}
+	}
 
 	public static Ticket fromJson(long id, JsonObject json, Department dept) {
 		Member author = null;

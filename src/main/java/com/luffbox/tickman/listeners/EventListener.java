@@ -36,7 +36,7 @@ public class EventListener extends ListenerAdapter {
 			for (Guild g : guilds) {
 				if (sb.length() > 0) { sb.append(", "); }
 				sb.append(" ").append(g.getName());
-				TickMan.getGuildConfig(g);
+				TickMan.getGuildConfig(tickman, g);
 			}
 			System.out.println("Currently connected to " + guilds.size() + " guild" + (guilds.size() == 1 ? "" : "s") + ":");
 			System.out.println(sb.toString());
@@ -45,14 +45,14 @@ public class EventListener extends ListenerAdapter {
 
 	@Override
 	public void onTextChannelDelete(@NotNull TextChannelDeleteEvent e) {
-		Config config = TickMan.getGuildConfig(e.getGuild());
+		Config config = TickMan.getGuildConfig(tickman, e.getGuild());
 		Ticket ticket = config.getTicketByChannel(e.getChannel());
 		if (ticket != null) { ticket.closeTicket(true); }
 	}
 
 	@Override
 	public void onGuildMessageReactionAdd(@NotNull GuildMessageReactionAddEvent e) {
-		Config config = TickMan.getGuildConfig(e.getGuild());
+		Config config = TickMan.getGuildConfig(tickman, e.getGuild());
 		Ticket ticket = config.getTicketByChannel(e.getChannel());
 		if (ticket != null) {
 			TicketReaction reaction = TicketReaction.fromEvent(e);
@@ -70,9 +70,12 @@ public class EventListener extends ListenerAdapter {
 	public final void onMessageReceived(MessageReceivedEvent e) {
 		if (e.getMember() == null || e.getChannelType() != ChannelType.TEXT) return;
 
-		Config config = TickMan.getGuildConfig(e.getGuild());
+		Config config = TickMan.getGuildConfig(tickman, e.getGuild());
 		boolean hasCmdPrefix = e.getMessage().getContentRaw().startsWith(config.getCmdPrefix());
 		if (e.getMessage().getContentRaw().isBlank() || e.getAuthor().isBot()) { return; }
+
+		Ticket ticket = config.getTicketByChannel(e.getTextChannel());
+		if (ticket != null) { ticket.appendToLog(e.getMessage().getContentStripped(), e.getMember()); }
 
 		if (hasCmdPrefix) { // Treat the message like a command
 			String[] msgParts = e.getMessage().getContentRaw().split("\\s+");
@@ -107,13 +110,13 @@ public class EventListener extends ListenerAdapter {
 		} else { // Not a command, check if message was sent to support channel
 			for (Department dept : config.getDepartments()) {
 				if (dept.getSupportChannel() != null && dept.getSupportChannel().equals(e.getChannel())) {
-					dept.createTicket(e.getMessage(), ticket -> {
+					dept.createTicket(e.getMessage(), createdTicket -> {
 						EmbedBuilder embed = dept.newEmbed();
-						embed.setAuthor(ticket.getAuthor().getUser().getAsTag(), null, ticket.getAuthor().getUser().getAvatarUrl());
-						embed.setDescription(ticket.getSubject());
-						embed.appendDescription("\n\n*Sent by* " + ticket.getAuthor().getUser().getAsMention() + " *in* " + ticket.getTicketChannel().getAsMention());
-						embed.appendDescription("\n\nWhen resolved, add " + TicketReaction.CLOSE.emote + " reaction or use `!t close` to close the ticket");
-						ticket.getTicketChannel().sendMessage(embed.build()).queue(ticketEmbed -> {
+						embed.setAuthor(createdTicket.getAuthor().getUser().getAsTag(), null, createdTicket.getAuthor().getUser().getAvatarUrl());
+						embed.setDescription(createdTicket.getSubject());
+						embed.appendDescription("\n\n*Sent by* " + createdTicket.getAuthor().getUser().getAsMention() + " *in* " + createdTicket.getTicketChannel().getAsMention());
+						embed.appendDescription("\n\nWhen resolved, add " + TicketReaction.CLOSE.emote + " reaction or use `!t close`");
+						createdTicket.getTicketChannel().sendMessage(embed.build()).queue(ticketEmbed -> {
 							for (TicketReaction r : TicketReaction.values()) {
 								ticketEmbed.addReaction(r.emote).queue();
 							}
@@ -121,7 +124,7 @@ public class EventListener extends ListenerAdapter {
 
 //						e.getMessage().delete().queueAfter(TickMan.Duration.INST.quant, TickMan.Duration.INST.unit);
 						QueueHelper.queueLater(e.getMessage().delete(), QueueHelper.INST);
-						e.getChannel().sendMessage(e.getAuthor().getAsMention() + " Please switch to " + ticket.getTicketChannel().getAsMention() + " to continue")
+						e.getChannel().sendMessage(e.getAuthor().getAsMention() + " Please switch to " + createdTicket.getTicketChannel().getAsMention() + " to continue")
 								.queue(msg -> QueueHelper.queueLater(msg.delete(), QueueHelper.LONG));
 					});
 				}

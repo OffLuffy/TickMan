@@ -120,8 +120,8 @@ public class TickMan {
 		return id;
 	}
 
-	public static @Nonnull Config getGuildConfig(@Nonnull Guild g) {
-		if (!guildConfigs.containsKey(g)) { guildConfigs.put(g, new Config(g)); }
+	public static @Nonnull Config getGuildConfig(TickMan tickman, @Nonnull Guild g) {
+		if (!guildConfigs.containsKey(g)) { guildConfigs.put(g, new Config(tickman, g)); }
 		return guildConfigs.get(g);
 	}
 

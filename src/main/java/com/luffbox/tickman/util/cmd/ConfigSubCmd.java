@@ -3,6 +3,8 @@ package com.luffbox.tickman.util.cmd;
 import com.luffbox.tickman.util.ticket.Config;
 import net.dv8tion.jda.api.entities.Message;
 
+import javax.annotation.Nonnull;
+
 /**
  * Represents a nested handler to dynamically handle Config value modification
  */
@@ -20,13 +22,13 @@ public abstract class ConfigSubCmd {
 	 * The message to be shown if the required number of arguments is not provided
 	 * @return A String with the usage message <strong>after</strong> "[prefix]conf "
 	 */
-	public abstract String usage();
+	public abstract @Nonnull String usage();
 
 	/**
 	 * The message to be shown to explain this sub command
 	 * @return A String with the sub command's description
 	 */
-	public abstract String desc();
+	public abstract @Nonnull String desc();
 
 	/**
 	 * Executes the sub command
@@ -41,5 +43,5 @@ public abstract class ConfigSubCmd {
 	 * @param config The Guild's Config object
 	 * @return A String showing the current value this sub command is responsible for modifying
 	 */
-	public abstract String value(Config config);
+	public abstract @Nonnull String value(Config config);
 }

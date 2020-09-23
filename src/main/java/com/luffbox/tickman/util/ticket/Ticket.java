@@ -9,7 +9,6 @@ import net.dv8tion.jda.api.entities.*;
 
 import javax.annotation.Nonnull;
 import java.io.*;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -31,7 +30,7 @@ public class Ticket implements ITMSnowflake {
 		this.author = author;
 		this.dept.addTicket(this);
 		this.subject = subject;
-		this.logFile = new File(TickMan.LOG_DATA, String.format("%s_%x_%x.txt", new Date(), ticketId, author.getIdLong()));
+		this.logFile = new File(TickMan.LOG_DATA, String.format("%x_%x.txt", ticketId, author.getIdLong()));
 	}
 
 	@Override
@@ -150,7 +149,7 @@ public class Ticket implements ITMSnowflake {
 		try (FileWriter fw = new FileWriter(getLogFile(), true);
 			 BufferedWriter bw = new BufferedWriter(fw); PrintWriter pw = new PrintWriter(bw)) {
 			pw.printf("%s (%s) : %s%n", from.getEffectiveName(), from.getUser().getId(), msg);
-		} catch (IOException ignore) {}
+		} catch (IOException ex) { ex.printStackTrace(); }
 	}
 
 	public static Ticket fromJson(long id, JsonObject json, Department dept) {

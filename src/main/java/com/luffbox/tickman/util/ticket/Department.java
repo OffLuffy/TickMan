@@ -23,6 +23,8 @@ import java.util.function.Consumer;
  */
 public class Department implements ITMSnowflake {
 
+	// TODO: Implement optional banned roles
+
 	private final long deptId;
 	private final Config config;
 	private String name;
@@ -88,9 +90,9 @@ public class Department implements ITMSnowflake {
 	 * @param r The Role to add
 	 * @return true if added successfully or already in the List.
 	 */
-	public boolean addSupportRole(Role r) {
-		if (getGuild() == null || r == null || !r.getGuild().equals(getGuild())) { return false; }
-		supportRoles.add(r);
+	public boolean addSupportRole(Role ... r) {
+		if (getGuild() == null || r == null) { return false; }
+		for (Role role : r) { if (role.getGuild().equals(getGuild())) supportRoles.add(role); }
 		config.save();
 		TMEventManager.departmentChange(this, ChangeType.Dept.ROLES);
 		return true;
@@ -101,9 +103,9 @@ public class Department implements ITMSnowflake {
 	 * @param r The Role to remove
 	 * @return true if removed successfully or not already in the List.
 	 */
-	public boolean removeSupportRole(Role r) {
-		if (getGuild() == null || r == null || !r.getGuild().equals(getGuild())) { return false; }
-		supportRoles.remove(r);
+	public boolean removeSupportRole(Role ... r) {
+		if (getGuild() == null || r == null) { return false; }
+		for (Role role : r) { if (role.getGuild().equals(getGuild())) supportRoles.remove(role); }
 		config.save();
 		TMEventManager.departmentChange(this, ChangeType.Dept.ROLES);
 		return true;

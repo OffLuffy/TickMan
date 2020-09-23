@@ -1,9 +1,12 @@
 package com.luffbox.tickman.commands;
 
 import com.luffbox.tickman.TickMan;
-import com.luffbox.tickman.commands.conf.*;
-import com.luffbox.tickman.util.constants.QueueHelper;
+import com.luffbox.tickman.commands.conf.CmdPrefixSubCmd;
+import com.luffbox.tickman.commands.conf.DeptSubCmd;
+import com.luffbox.tickman.commands.conf.EmbedColorSubCmd;
+import com.luffbox.tickman.commands.conf.InviteSubCmd;
 import com.luffbox.tickman.util.cmd.*;
+import com.luffbox.tickman.util.constants.QueueHelper;
 import com.luffbox.tickman.util.ticket.Config;
 import com.luffbox.tickman.util.ticket.Department;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -11,8 +14,10 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
-import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Set;
 
 public class ConfigureCmd extends CmdHandler {
 
@@ -35,9 +40,8 @@ public class ConfigureCmd extends CmdHandler {
 
 		if (args.length == 0) {
 			// If not arguments are provided, print current config embed (self-delete after 1 minute)
-			e.getMessage().delete().queueAfter(1, TimeUnit.SECONDS);
-			e.getChannel().sendMessage(getCurrentConfigEmbed(config).build())
-					.queue(msg -> msg.delete().queueAfter(1, TimeUnit.MINUTES));
+			QueueHelper.tempSend(e.getChannel(), getCurrentConfigEmbed(config).build(), QueueHelper.LONG);
+			QueueHelper.queueLater(e.getMessage().delete(), QueueHelper.LONG);
 			return;
 		}
 
@@ -56,6 +60,7 @@ public class ConfigureCmd extends CmdHandler {
 				EmbedBuilder cmdUsage = config.newEmbed();
 				cmdUsage.setTitle(exeSub.aliases[0] + " usage");
 				cmdUsage.addField("Usage", config.getCmdPrefix() + "conf " + exeSub.usage(), false);
+				cmdUsage.addField("Description", config.getCmdPrefix() + "conf " + exeSub.desc(), false);
 				cmdUsage.addField("Current value", exeSub.value(config), false);
 				QueueHelper.tempSend(e.getChannel(), cmdUsage.build(), QueueHelper.LONG);
 //				e.getChannel().sendMessage(cmdUsage.build()).queue(msg -> msg.delete().queueAfter(1, TimeUnit.MINUTES));

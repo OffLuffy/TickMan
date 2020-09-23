@@ -1,9 +1,6 @@
 package com.luffbox.tickman;
 
-import com.luffbox.tickman.commands.ConfigureCmd;
-import com.luffbox.tickman.commands.FindTicketCmd;
-import com.luffbox.tickman.commands.HelpCmd;
-import com.luffbox.tickman.commands.InviteCmd;
+import com.luffbox.tickman.commands.*;
 import com.luffbox.tickman.events.TMListenerAdapter;
 import com.luffbox.tickman.listeners.EventListener;
 import com.luffbox.tickman.listeners.TMEventListener;
@@ -32,7 +29,7 @@ public class TickMan {
 
 	public static final File DATA = new File(System.getProperty("user.dir") + File.separator + "data");
 	public static final File GUILD_DATA = new File(DATA, "guilds");
-	public static final File TICKET_DATA = new File(DATA, "tickets");
+//	public static final File TICKET_DATA = new File(DATA, "tickets");
 	public static final File LOG_DATA = new File(DATA, "transcripts");
 	public static final SnowflakeServer SNOWFLAKE_SERVER = new SnowflakeServer(0L, 0L);
 
@@ -41,7 +38,8 @@ public class TickMan {
 	static {
 		if (!(DATA.exists() || DATA.mkdirs())) { System.err.println("Failed to create data directory"); }
 		if (!(GUILD_DATA.exists() || GUILD_DATA.mkdirs())) { System.err.println("Failed to create guild data directory"); }
-		if (!(TICKET_DATA.exists() || TICKET_DATA.mkdirs())) { System.err.println("Failed to create ticket data directory"); }
+//		if (!(TICKET_DATA.exists() || TICKET_DATA.mkdirs())) { System.err.println("Failed to create ticket data directory"); }
+		if (!(LOG_DATA.exists() || LOG_DATA.mkdirs())) { System.err.println("Failed to create log data directory"); }
 	}
 
 	private static final Map<Guild, Config> guildConfigs = new HashMap<>();
@@ -98,6 +96,7 @@ public class TickMan {
 		cmds.add(new InviteCmd(this));
 		cmds.add(new ConfigureCmd(this));
 		cmds.add(new FindTicketCmd(this));
+		cmds.add(new TicketCmd(this));
 
 		addListener(new TMEventListener());
 

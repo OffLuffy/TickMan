@@ -52,6 +52,7 @@ public class EventListener extends ListenerAdapter {
 
 	@Override
 	public void onGuildMessageReactionAdd(@NotNull GuildMessageReactionAddEvent e) {
+		if (e.getUser().isBot()) { return; }
 		Config config = TickMan.getGuildConfig(tickman, e.getGuild());
 		Ticket ticket = config.getTicketByChannel(e.getChannel());
 		if (ticket != null) {
@@ -112,9 +113,9 @@ public class EventListener extends ListenerAdapter {
 				if (dept.getSupportChannel() != null && dept.getSupportChannel().equals(e.getChannel())) {
 					dept.createTicket(e.getMessage(), createdTicket -> {
 						EmbedBuilder embed = dept.newEmbed();
-						embed.setAuthor(createdTicket.getAuthor().getUser().getAsTag(), null, createdTicket.getAuthor().getUser().getAvatarUrl());
+						embed.setAuthor(e.getAuthor().getAsTag(), null, e.getAuthor().getAvatarUrl());
 						embed.setDescription(createdTicket.getSubject());
-						embed.appendDescription("\n\n*Sent by* " + createdTicket.getAuthor().getUser().getAsMention() + " *in* " + createdTicket.getTicketChannel().getAsMention());
+						embed.appendDescription("\n\n*Sent by* " + e.getAuthor().getAsMention() + " *in* " + e.getTextChannel().getAsMention());
 						embed.appendDescription("\n\nWhen resolved, add " + TicketReaction.CLOSE.emote + " reaction or use `!t close`");
 						createdTicket.getTicketChannel().sendMessage(embed.build()).queue(ticketEmbed -> {
 							for (TicketReaction r : TicketReaction.values()) {

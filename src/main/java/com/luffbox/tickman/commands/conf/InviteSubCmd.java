@@ -3,6 +3,7 @@ package com.luffbox.tickman.commands.conf;
 import com.luffbox.tickman.util.cmd.ConfigSubCmd;
 import com.luffbox.tickman.util.ticket.Config;
 import net.dv8tion.jda.api.entities.Message;
+import org.jetbrains.annotations.NotNull;
 
 public class InviteSubCmd extends ConfigSubCmd {
 	public InviteSubCmd() {
@@ -10,12 +11,12 @@ public class InviteSubCmd extends ConfigSubCmd {
 	}
 
 	@Override
-	public String usage() {
+	public @NotNull String usage() {
 		return null;
 	}
 
 	@Override
-	public String desc() {
+	public @NotNull String desc() {
 		return null;
 	}
 
@@ -25,7 +26,7 @@ public class InviteSubCmd extends ConfigSubCmd {
 	}
 
 	@Override
-	public String value(Config config) {
+	public @NotNull String value(Config config) {
 		return null;
 	}
 }

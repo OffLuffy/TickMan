@@ -33,6 +33,7 @@ public class TickMan {
 	public static final File DATA = new File(System.getProperty("user.dir") + File.separator + "data");
 	public static final File GUILD_DATA = new File(DATA, "guilds");
 	public static final File TICKET_DATA = new File(DATA, "tickets");
+	public static final File LOG_DATA = new File(DATA, "transcripts");
 	public static final SnowflakeServer SNOWFLAKE_SERVER = new SnowflakeServer(0L, 0L);
 
 	public static final Set<TMListenerAdapter> listeners = new HashSet<>();

@@ -1,12 +1,16 @@
 package com.luffbox.tickman.util.ticket;
 
 import com.github.cliftonlabs.json_simple.JsonObject;
+import com.luffbox.tickman.TickMan;
 import com.luffbox.tickman.events.TMEventManager;
 import com.luffbox.tickman.util.constants.ChangeType;
 import com.luffbox.tickman.util.snowflake.ITMSnowflake;
 import net.dv8tion.jda.api.entities.*;
 
 import javax.annotation.Nonnull;
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -19,6 +23,7 @@ public class Ticket implements ITMSnowflake {
 	private Member author;
 	private String subject;
 	private final Set<Member> participants = new HashSet<>();
+	private final File logFile;
 
 	public Ticket(long id, @Nonnull Department dept, @Nonnull Member author, @Nonnull TextChannel channel, @Nonnull String subject) {
 		this.dept = dept;
@@ -27,7 +32,7 @@ public class Ticket implements ITMSnowflake {
 		this.author = author;
 		this.dept.addTicket(this);
 		this.subject = subject;
-		// TODO: Setup channel permissions
+		this.logFile = new File(TickMan.LOG_DATA, String.format("%s_%x_%x.txt", new Date(), ticketId, author.getIdLong()));
 	}
 
 	@Override
@@ -116,6 +121,7 @@ public class Ticket implements ITMSnowflake {
 	public void closeTicket(boolean wasDestroyed) {
 		// TODO: Save ticket transcript to file (upload to user?)
 		System.out.printf("Ticket closed: %s (ID:%x)%n", getSubject(), getIdLong());
+
 		ticketChannel.delete().queue();
 		getDepartment().removeTicket(this);
 		if (wasDestroyed) {

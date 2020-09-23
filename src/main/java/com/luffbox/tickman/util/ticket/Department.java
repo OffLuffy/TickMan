@@ -191,10 +191,7 @@ public class Department implements ITMSnowflake {
 		}
 		final long tid = TickMan.getSnowflake();
 		ChannelAction<TextChannel> ca = getTicketCategory().createTextChannel(String.format("ticket_%x", tid));
-		// TODO: Add channel support role overrides and member override for msg.getMember()
-		for (Role r : supportRoles) {
-			ca = ca.addRolePermissionOverride(r.getIdLong(), PermHelper.getAllowedTicketPerms(), null);
-		}
+		for (Role r : supportRoles) { ca = ca.addRolePermissionOverride(r.getIdLong(), PermHelper.getAllowedTicketPerms(), null); }
 		ca = ca.addMemberPermissionOverride(msg.getMember().getIdLong(), PermHelper.getAllowedTicketPerms(), null);
 		ca.queue(channel -> {
 			Ticket ticket = new Ticket(tid, this, msg.getMember(), channel, msg.getContentRaw());

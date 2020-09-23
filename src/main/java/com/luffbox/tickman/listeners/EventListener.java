@@ -58,7 +58,6 @@ public class EventListener extends ListenerAdapter {
 			TicketReaction reaction = TicketReaction.fromEvent(e);
 			if (reaction != null) {
 				System.out.println("Reacted to ticket with " + reaction.name());
-				// TODO: Implement reactions
 				switch (reaction) {
 					case CLOSE -> ticket.closeTicket(false);
 				}

@@ -1,8 +1,9 @@
 package com.luffbox.tickman.listeners;
 
 import com.luffbox.tickman.TickMan;
-import com.luffbox.tickman.util.constants.QueueHelper;
+import com.luffbox.tickman.events.TMEventManager;
 import com.luffbox.tickman.util.cmd.CmdHandler;
+import com.luffbox.tickman.util.constants.QueueHelper;
 import com.luffbox.tickman.util.constants.TicketReaction;
 import com.luffbox.tickman.util.ticket.Config;
 import com.luffbox.tickman.util.ticket.Department;
@@ -29,7 +30,6 @@ public class EventListener extends ListenerAdapter {
 
 	@Override
 	public void onReady(@NotNull ReadyEvent e) {
-
 		List<Guild> guilds = e.getJDA().getGuilds();
 		if (guilds.size() > 0) {
 			StringBuilder sb = new StringBuilder();
@@ -55,7 +55,15 @@ public class EventListener extends ListenerAdapter {
 		Config config = TickMan.getGuildConfig(e.getGuild());
 		Ticket ticket = config.getTicketByChannel(e.getChannel());
 		if (ticket != null) {
-
+			TicketReaction reaction = TicketReaction.fromEvent(e);
+			if (reaction != null) {
+				System.out.println("Reacted to ticket with " + reaction.name());
+				// TODO: Implement reactions
+				switch (reaction) {
+					case CLOSE -> ticket.closeTicket(false);
+				}
+				TMEventManager.ticketReact(ticket, reaction);
+			}
 		}
 	}
 

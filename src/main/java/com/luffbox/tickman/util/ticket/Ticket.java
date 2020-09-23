@@ -113,12 +113,12 @@ public class Ticket implements ITMSnowflake {
 		TMEventManager.ticketTransfer(this, oldDept, recvDept);
 	}
 
-	public void closeTicket(boolean destroy) {
+	public void closeTicket(boolean wasDestroyed) {
 		// TODO: Save ticket transcript to file (upload to user?)
 		System.out.printf("Ticket closed: %s (ID:%x)%n", getSubject(), getIdLong());
 		ticketChannel.delete().queue();
 		getDepartment().removeTicket(this);
-		if (destroy) {
+		if (wasDestroyed) {
 			TMEventManager.ticketDestroy(this);
 		} else {
 			TMEventManager.ticketClose(this);

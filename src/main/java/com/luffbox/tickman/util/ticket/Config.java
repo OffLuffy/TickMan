@@ -5,6 +5,8 @@ import com.github.cliftonlabs.json_simple.JsonObject;
 import com.github.cliftonlabs.json_simple.Jsonable;
 import com.github.cliftonlabs.json_simple.Jsoner;
 import com.luffbox.tickman.TickMan;
+import com.luffbox.tickman.events.TMEventManager;
+import com.luffbox.tickman.util.constants.ChangeType;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
 
@@ -56,6 +58,8 @@ public class Config implements Jsonable {
 	private boolean allowInvite = false;
 	private BigDecimal embedColor = BigDecimal.valueOf(0x33AAFF);
 
+	private boolean isLoading = false;
+
 	public Config(@Nonnull Guild guild) {
 		this.guild = guild;
 		outFile = new File(TickMan.GUILD_DATA, guild.getId() + ".json");
@@ -63,7 +67,11 @@ public class Config implements Jsonable {
 	}
 
 	public void load() {
-		if (!outFile.exists()) { save(); }
+		isLoading = true;
+		if (!outFile.exists()) {
+			save();
+			TMEventManager.configCreate(this);
+		}
 
 		try (FileReader readIn = new FileReader(outFile)) {
 			JsonObject json = (JsonObject) Jsoner.deserialize(readIn);
@@ -95,6 +103,7 @@ public class Config implements Jsonable {
 					}
 				}
 			}
+			isLoading = false;
 
 		} catch (IOException e) {
 			System.err.println("Failed to read guild data file for guild: " + guild.getName() + ", file: " + outFile.getName() + ", reason: " + e.getMessage());
@@ -150,6 +159,7 @@ public class Config implements Jsonable {
 	public void setCmdPrefix(String cmdPrefix) {
 		this.cmdPrefix = cmdPrefix;
 		save();
+		if (!isLoading) { TMEventManager.configChange(this, ChangeType.Config.PREFIX); }
 	}
 
 	/**
@@ -159,11 +169,13 @@ public class Config implements Jsonable {
 	public void setAllowInvite(boolean allow) {
 		allowInvite = allow;
 		save();
+		if (!isLoading) { TMEventManager.configChange(this, ChangeType.Config.INVITE); }
 	}
 
 	public void setEmbedColor(BigDecimal color) {
 		color = color.max(BigDecimal.valueOf(0x000000)).min(BigDecimal.valueOf(0xFFFFFF));
 		embedColor = color;
+		if (!isLoading) { TMEventManager.configChange(this, ChangeType.Config.COLOR); }
 	}
 
 	public EmbedBuilder newEmbed() {
@@ -175,6 +187,7 @@ public class Config implements Jsonable {
 	public Department createDepartment(String name) {
 		Department dept = new Department(TickMan.getSnowflake(), this, name, null);
 		departments.add(dept);
+		TMEventManager.departmentCreate(dept);
 		return dept;
 	}
 
@@ -182,6 +195,7 @@ public class Config implements Jsonable {
 		for (Department dept : getDepartments()) {
 			if (dept.getId().equals(deptId)) {
 				departments.remove(dept);
+				TMEventManager.departmentDelete(dept);
 			}
 		}
 	}

@@ -17,10 +17,7 @@ public class CmdPrefixSubCmd extends ConfigSubCmd {
 	public @NotNull String desc() { return "Sets the prefix required to run commands"; }
 
 	@Override
-	public void execute(Config config, Message msg, String[] values) {
-		config.setCmdPrefix(values[0]);
-		// TODO: Print success message?
-	}
+	public void execute(Config config, Message msg, String[] values) { config.setCmdPrefix(values[0]); }
 
 	@Override
 	public @NotNull String value(Config config) { return config.getCmdPrefix(); }

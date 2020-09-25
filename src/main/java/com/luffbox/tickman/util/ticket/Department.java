@@ -199,6 +199,8 @@ public class Department implements ITMSnowflake {
 		ca = ca.addMemberPermissionOverride(msg.getMember().getIdLong(), PermHelper.getAllowedTicketPerms(), null);
 		ca.queue(channel -> {
 			Ticket ticket = new Ticket(tid, this, msg.getMember(), channel, msg.getContentRaw());
+			ticket.appendToLog("===[ START OF TICKET ]===", msg.getMember());
+			ticket.appendToLog(ticket.getSubject(), msg.getMember());
 			if (success != null) {
 				success.accept(ticket);
 				TMEventManager.ticketCreate(ticket);

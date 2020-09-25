@@ -11,22 +11,14 @@ public class EmbedColorSubCmd extends ConfigSubCmd {
 	}
 
 	@Override
-	public @NotNull String usage() {
-		return null;
-	}
+	public @NotNull String usage() { return "color <color>"; }
 
 	@Override
-	public @NotNull String desc() {
-		return null;
-	}
+	public @NotNull String desc() { return "Sets the embed color the bot uses"; }
 
 	@Override
-	public void execute(Config config, Message msg, String[] values) {
-		// TODO: Implement
-	}
+	public void execute(Config config, Message msg, String[] values) { config.setCmdPrefix(values[0]); }
 
 	@Override
-	public @NotNull String value(Config config) {
-		return null;
-	}
+	public @NotNull String value(Config config) { return String.format("%06x", config.getEmbedColor().longValue()); }
 }

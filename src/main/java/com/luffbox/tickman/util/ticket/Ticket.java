@@ -8,6 +8,7 @@ import com.luffbox.tickman.util.snowflake.ITMSnowflake;
 import net.dv8tion.jda.api.entities.*;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.*;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -121,7 +122,6 @@ public class Ticket implements ITMSnowflake {
 	}
 
 	public void closeTicket(boolean wasDestroyed) {
-		// TODO: Save ticket transcript to file (upload to user?)
 		System.out.printf("Ticket closed: %s (ID:%x)%n", getSubject(), getIdLong());
 		getAuthor().getUser().openPrivateChannel().queue(channel -> {
 			channel.sendMessage("**" + getGuild().getName() + "** - *" + tickManInst().getBotName()
@@ -145,10 +145,16 @@ public class Ticket implements ITMSnowflake {
 
 	public void removeParticipant(@Nonnull Member participant) { participants.remove(participant); }
 
-	public void appendToLog(String msg, Member from) {
+	public void appendToLog(@Nonnull String msg, @Nullable Member from) {
+		// TODO: Convert to JSON format and store additional Message data (sent time)
+		if (msg.isBlank()) { return; }
 		try (FileWriter fw = new FileWriter(getLogFile(), true);
-			 BufferedWriter bw = new BufferedWriter(fw); PrintWriter pw = new PrintWriter(bw)) {
-			pw.printf("%s (%s) : %s%n", from.getEffectiveName(), from.getUser().getId(), msg);
+			 BufferedWriter bw = new BufferedWriter(fw); PrintWriter pw = new PrintWriter(bw)){
+				if (from == null) {
+					pw.printf("%s%n", msg);
+				} else {
+					pw.printf("%s (%s) : %s%n", from.getEffectiveName(), from.getUser().getId(), msg);
+				}
 		} catch (IOException ex) { ex.printStackTrace(); }
 	}
 

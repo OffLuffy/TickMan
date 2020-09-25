@@ -19,7 +19,7 @@ import java.util.List;
 public class TicketCmd extends CmdHandler {
 	public TicketCmd(TickMan tickman) {
 		super(tickman, new CmdOpts(new String[] {"ticket", "t"},
-				"Used in a ticket channel to modify or close the ticket", true, true, true,
+				"Used in a ticket channel to modify or close the ticket", true, true, true, false,
 				new CmdArg("action", CmdArgType.STRING, true)));
 	}
 

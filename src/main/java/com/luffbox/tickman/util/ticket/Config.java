@@ -86,19 +86,11 @@ public class Config implements Jsonable {
 
 			JsonObject depts = (JsonObject) json.get(Field.DEPARTMENTS.path);
 			if (depts != null) {
-				System.out.println("depts Json object not null");
-				System.out.println("depts Json keySet = " + depts.keySet());
-				if (depts.keySet().isEmpty()) {
-					System.out.println("depts Json keySet is empty");
-					System.out.println("Created: " + createDepartment("Support"));
-					save();
-				}
+				if (depts.keySet().isEmpty()) { save(); }
 				for (String deptId : depts.keySet()) {
-					System.out.println("Attempting to load Department with ID: " + deptId);
 					try {
 						Department dept = new Department(Long.parseLong(deptId),
 								this, (String) json.get(Field.DEPT_NAME.path), (JsonObject) depts.get(deptId));
-						System.out.println("Loaded: " + dept);
 						departments.add(dept);
 						save();
 					} catch (Exception e) {
@@ -248,6 +240,8 @@ public class Config implements Jsonable {
 		});
 		return found.stream().findFirst().orElse(null);
 	}
+
+	public boolean isLoading() { return isLoading; }
 
 	@Override
 	public String toJson() {

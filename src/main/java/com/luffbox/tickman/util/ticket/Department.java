@@ -82,7 +82,7 @@ public class Department implements ITMSnowflake {
 
 	public void setName(String name) {
 		this.name = name;
-		TMEventManager.departmentChange(this, ChangeType.Dept.NAME);
+		if (!config.isLoading()) { TMEventManager.departmentChange(this, ChangeType.Dept.NAME); }
 	}
 
 	/**
@@ -94,7 +94,7 @@ public class Department implements ITMSnowflake {
 		if (getGuild() == null || r == null) { return false; }
 		for (Role role : r) { if (role.getGuild().equals(getGuild())) supportRoles.add(role); }
 		config.save();
-		TMEventManager.departmentChange(this, ChangeType.Dept.ROLES);
+		if (!config.isLoading()) { TMEventManager.departmentChange(this, ChangeType.Dept.ROLES); }
 		return true;
 	}
 
@@ -107,7 +107,7 @@ public class Department implements ITMSnowflake {
 		if (getGuild() == null || r == null) { return false; }
 		for (Role role : r) { if (role.getGuild().equals(getGuild())) supportRoles.remove(role); }
 		config.save();
-		TMEventManager.departmentChange(this, ChangeType.Dept.ROLES);
+		if (!config.isLoading()) { TMEventManager.departmentChange(this, ChangeType.Dept.ROLES); }
 		return true;
 	}
 
@@ -117,7 +117,7 @@ public class Department implements ITMSnowflake {
 	public void clearSupportRoles() {
 		supportRoles.clear();
 		config.save();
-		TMEventManager.departmentChange(this, ChangeType.Dept.ROLES);
+		if (!config.isLoading()) { TMEventManager.departmentChange(this, ChangeType.Dept.ROLES); }
 	}
 
 	/**
@@ -129,7 +129,7 @@ public class Department implements ITMSnowflake {
 		if (getGuild() == null || category == null || !category.getGuild().equals(getGuild())) { return false; }
 		ticketCategory = category;
 		config.save();
-		TMEventManager.departmentChange(this, ChangeType.Dept.CATEGORY);
+		if (!config.isLoading()) { TMEventManager.departmentChange(this, ChangeType.Dept.CATEGORY); }
 		return true;
 	}
 
@@ -161,7 +161,7 @@ public class Department implements ITMSnowflake {
 					.queue(msg -> QueueHelper.queueLater(msg.delete(), QueueHelper.SHORT));
 		}
 		config.save();
-		TMEventManager.departmentChange(this, ChangeType.Dept.CHANNEL);
+		if (!config.isLoading()) { TMEventManager.departmentChange(this, ChangeType.Dept.CHANNEL); }
 		return true;
 	}
 

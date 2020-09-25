@@ -38,7 +38,7 @@ public class Ticket implements ITMSnowflake {
 		this.author = author;
 		this.dept.addTicket(this);
 		this.subject = subject;
-		this.logFile = new File(TickMan.LOG_DATA, String.format("%x_%x.txt", ticketId, author.getIdLong()));
+		this.logFile = new File(TickMan.LOG_DATA, String.format("%x_%x.json", ticketId, author.getIdLong()));
 		loadLogFile();
 	}
 
@@ -88,7 +88,7 @@ public class Ticket implements ITMSnowflake {
 		if (getGuild() == null || author == null || !author.getGuild().equals(getGuild())) { return false; }
 		this.author = author;
 		dept.getConfig().save();
-		TMEventManager.ticketChange(this, ChangeType.Ticket.AUTHOR);
+		if (!dept.getConfig().isLoading()) { TMEventManager.ticketChange(this, ChangeType.Ticket.AUTHOR); }
 		return true;
 	}
 	public boolean setAuthorId(String id) {
@@ -105,14 +105,14 @@ public class Ticket implements ITMSnowflake {
 
 	public void setSubject(@Nonnull String subject) {
 		this.subject = subject;
-		TMEventManager.ticketChange(this, ChangeType.Ticket.SUBJECT);
+		if (!dept.getConfig().isLoading()) { TMEventManager.ticketChange(this, ChangeType.Ticket.SUBJECT); }
 	}
 
 	public boolean setTicketChannel(TextChannel channel) {
 		if (getGuild() == null || channel == null || !channel.getGuild().equals(getGuild())) { return false; }
 		this.ticketChannel = channel;
 		dept.getConfig().save();
-		TMEventManager.ticketChange(this, ChangeType.Ticket.CHANNEL);
+		if (!dept.getConfig().isLoading()) { TMEventManager.ticketChange(this, ChangeType.Ticket.CHANNEL); }
 		return true;
 	}
 	public boolean setTicketChannelId(String id) {
@@ -154,7 +154,7 @@ public class Ticket implements ITMSnowflake {
 			channel.sendMessage("**" + getGuild().getName() + "** - *" + tickManInst().getBotName()
 					+ " Ticket System*\nYour ticket was closed! For your records, here is a copy of the transcript.")
 					.queue();
-			channel.sendFile(getLogFile(), String.format("TicketLog_%x.txt", getIdLong())).queue();
+			channel.sendFile(getLogFile(), String.format("TicketLog_%x.json", getIdLong())).queue();
 		});
 		ticketChannel.delete().queue();
 		getDepartment().removeTicket(this);
@@ -167,10 +167,14 @@ public class Ticket implements ITMSnowflake {
 
 	public void addParticipant(@Nonnull Member participant) {
 		participants.add(participant);
+		// TODO: Add permission override for new participants
 		TMEventManager.ticketInvite(this, participant);
 	}
 
-	public void removeParticipant(@Nonnull Member participant) { participants.remove(participant); }
+	public void removeParticipant(@Nonnull Member participant) {
+		participants.remove(participant);
+		// TODO: Remove permission override for removed participant
+	}
 
 	public void appendToLog(@Nonnull Message msg) {
 		if (msg.getMember() == null) { return; }

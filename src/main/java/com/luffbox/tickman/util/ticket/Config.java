@@ -28,6 +28,7 @@ public class Config implements Jsonable {
 		CMD_PREFIX("cmdPrefix"),
 		ALLOW_INVITE("allowInvite"),
 		EMBED_COLOR("embedColor"),
+		CONFIG_ROLES("configRoles"),
 		DEPARTMENTS("departments"),
 
 		// Paths to values in Departments subsection in guild config

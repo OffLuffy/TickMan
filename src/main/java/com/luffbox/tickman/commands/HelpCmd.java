@@ -12,7 +12,7 @@ import java.awt.*;
 
 public class HelpCmd extends CmdHandler {
 	public HelpCmd(TickMan tickman) {
-		super(tickman, new CmdOpts(new String[]{"help", "?"}, tickman.getBotName() + " Help", true, false, false));
+		super(tickman, new CmdOpts(new String[]{"help", "?"}, tickman.getBotName() + " Help", true, false, false, false));
 	}
 
 	@Override

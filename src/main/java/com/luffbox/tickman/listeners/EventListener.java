@@ -76,9 +76,7 @@ public class EventListener extends ListenerAdapter {
 		if (e.getMessage().getContentRaw().isBlank() || e.getAuthor().isBot()) { return; }
 
 		Ticket ticket = config.getTicketByChannel(e.getTextChannel());
-		if (ticket != null) {
-			ticket.appendToLog(e.getMessage());
-		}
+		if (ticket != null) { ticket.appendToLog(e.getMessage()); }
 
 		if (hasCmdPrefix) { // Treat the message like a command
 			String[] msgParts = e.getMessage().getContentRaw().split("\\s+");
@@ -99,15 +97,12 @@ public class EventListener extends ListenerAdapter {
 					selectedCmd.onCommand(e, config, args);
 					if (selectedCmd.opts.delete()) {
 						QueueHelper.queueLater(e.getMessage().delete(), QueueHelper.INST);
-//						e.getMessage().delete().queueAfter(TickMan.Duration.INST.quantity, TickMan.Duration.INST.unit);
 					}
 				}
 			} else {
 				e.getChannel().sendMessage(e.getAuthor().getAsMention() + " Command not recognized!").queue(msg -> {
 					QueueHelper.queueLater(e.getMessage().delete(), QueueHelper.INST);
 					QueueHelper.queueLater(msg.delete(), QueueHelper.SHORT);
-//					e.getMessage().delete().queueAfter(TickMan.Duration.INST.quantity, TickMan.Duration.INST.unit);
-//					msg.delete().queueAfter(TickMan.Duration.SHORT.quantity, TickMan.Duration.SHORT.unit);
 				});
 			}
 		} else { // Not a command, check if message was sent to support channel
@@ -125,7 +120,6 @@ public class EventListener extends ListenerAdapter {
 							}
 						});
 
-//						e.getMessage().delete().queueAfter(TickMan.Duration.INST.quant, TickMan.Duration.INST.unit);
 						QueueHelper.queueLater(e.getMessage().delete(), QueueHelper.INST);
 						e.getChannel().sendMessage(e.getAuthor().getAsMention() + " Please switch to " + createdTicket.getTicketChannel().getAsMention() + " to continue")
 								.queue(msg -> QueueHelper.queueLater(msg.delete(), QueueHelper.LONG));

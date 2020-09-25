@@ -10,7 +10,6 @@ import com.luffbox.tickman.util.constants.QueueHelper;
 import com.luffbox.tickman.util.ticket.Config;
 import com.luffbox.tickman.util.ticket.Department;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
@@ -24,7 +23,7 @@ public class ConfigureCmd extends CmdHandler {
 	private final Set<ConfigSubCmd> subCmd = new HashSet<>();
 
 	public ConfigureCmd(TickMan tickman) {
-		super(tickman, new CmdOpts(new String[] {"conf", "confguild", "options"}, "Configure the current guild", false, true, true,
+		super(tickman, new CmdOpts(new String[] {"conf", "confguild", "options"}, "Configure the current guild", false, true, true, true,
 				new CmdArg("property", CmdArgType.STRING, true),
 				new CmdArg("value", CmdArgType.STRING, true)
 		));
@@ -36,7 +35,6 @@ public class ConfigureCmd extends CmdHandler {
 
 	@Override
 	public void onCommand(MessageReceivedEvent e, Config config, String[] args) {
-		if (e.getMember() == null || !e.getMember().hasPermission(Permission.ADMINISTRATOR)) { return; }
 
 		if (args.length == 0) {
 			// If not arguments are provided, print current config embed (self-delete after 1 minute)

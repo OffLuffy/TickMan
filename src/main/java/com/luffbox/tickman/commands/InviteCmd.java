@@ -8,7 +8,7 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 public class InviteCmd extends CmdHandler {
 	public InviteCmd(TickMan tickman) {
-		super(tickman, new CmdOpts(new String[] {"invite", "inv"}, "Invite " + tickman.getBotName() + " to your server", true, true, false));
+		super(tickman, new CmdOpts(new String[] {"invite", "inv"}, "Invite " + tickman.getBotName() + " to your server", true, true, false, false));
 	}
 
 	@Override

@@ -22,7 +22,7 @@ public class FindTicketCmd extends CmdHandler {
 	public FindTicketCmd(TickMan tickman) {
 		super(tickman, new CmdOpts(
 				new String[] {"find", "findticket", "search", "searchtickets"},
-				"Find a ticket user or ticket ID", true, true, true,
+				"Find a ticket user or ticket ID", true, true, true, false,
 				new CmdArg("criteria", CmdArgType.STRING, true)
 		));
 	}

@@ -40,14 +40,7 @@ public class DeptSubCmd extends ConfigSubCmd {
 		String propVal = values[1].toLowerCase(Locale.ENGLISH);
 		String setVal = values.length > 2 ? values[2] : null;
 
-		Department dept = null;
-		for (Department d : config.getDepartments()) {
-			if (d.getName().equalsIgnoreCase(deptVal) || d.getId().equalsIgnoreCase(deptVal)
-					|| (d.getSupportChannel() != null && d.getSupportChannel().getId().equalsIgnoreCase(deptVal))
-					|| (d.getTicketCategory() != null && d.getTicketCategory().getId().equalsIgnoreCase(deptVal))) {
-				dept = d; break;
-			}
-		}
+		Department dept = config.findDepartment(deptVal);
 		if (dept == null) {
 			QueueHelper.queueLater(msg.delete(), QueueHelper.INST);
 			QueueHelper.tempSend(msg.getChannel(), msg.getAuthor().getAsMention() + " Can't find that department", QueueHelper.LONG);

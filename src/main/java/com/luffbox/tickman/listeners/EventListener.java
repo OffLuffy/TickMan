@@ -76,7 +76,9 @@ public class EventListener extends ListenerAdapter {
 		if (e.getMessage().getContentRaw().isBlank() || e.getAuthor().isBot()) { return; }
 
 		Ticket ticket = config.getTicketByChannel(e.getTextChannel());
-		if (ticket != null) { ticket.appendToLog(e.getMessage().getContentStripped(), e.getMember()); }
+		if (ticket != null) {
+			ticket.appendToLog(e.getMessage());
+		}
 
 		if (hasCmdPrefix) { // Treat the message like a command
 			String[] msgParts = e.getMessage().getContentRaw().split("\\s+");

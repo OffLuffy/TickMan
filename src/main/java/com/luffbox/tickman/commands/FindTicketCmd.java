@@ -40,6 +40,8 @@ public class FindTicketCmd extends CmdHandler {
 
 		List<Member> members = e.getMessage().getMentionedMembers();
 
+		// TODO: Can this be improved?
+
 		if (!members.isEmpty()) {
 			for (Member m : members) {
 				foundTickets.addAll(config.getTicketsByMember(m));

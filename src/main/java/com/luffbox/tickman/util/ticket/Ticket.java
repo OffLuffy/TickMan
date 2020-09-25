@@ -1,6 +1,9 @@
 package com.luffbox.tickman.util.ticket;
 
+import com.github.cliftonlabs.json_simple.JsonArray;
+import com.github.cliftonlabs.json_simple.JsonException;
 import com.github.cliftonlabs.json_simple.JsonObject;
+import com.github.cliftonlabs.json_simple.Jsoner;
 import com.luffbox.tickman.TickMan;
 import com.luffbox.tickman.events.TMEventManager;
 import com.luffbox.tickman.util.constants.ChangeType;
@@ -8,8 +11,11 @@ import com.luffbox.tickman.util.snowflake.ITMSnowflake;
 import net.dv8tion.jda.api.entities.*;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.io.*;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -23,8 +29,9 @@ public class Ticket implements ITMSnowflake {
 	private String subject;
 	private final Set<Member> participants = new HashSet<>();
 	private final File logFile;
+	private JsonObject transcript;
 
-	public Ticket(long id, @Nonnull Department dept, @Nonnull Member author, @Nonnull TextChannel channel, @Nonnull String subject) {
+	public Ticket(long id, @Nonnull Department dept, @Nonnull TextChannel channel, @Nonnull Member author, @Nonnull String subject) {
 		this.dept = dept;
 		this.ticketId = id;
 		this.ticketChannel = channel;
@@ -32,6 +39,26 @@ public class Ticket implements ITMSnowflake {
 		this.dept.addTicket(this);
 		this.subject = subject;
 		this.logFile = new File(TickMan.LOG_DATA, String.format("%x_%x.txt", ticketId, author.getIdLong()));
+		loadLogFile();
+	}
+
+	private void loadLogFile() {
+		if (logFile.exists()) {
+			try (FileReader readIn = new FileReader(logFile)) {
+				JsonObject json = (JsonObject) Jsoner.deserialize(readIn);
+				transcript = new JsonObject(){{
+					put("messages", json.get("messages"));
+				}};
+			} catch (IOException e) {
+				System.err.println("Failed to read ticket log file for ticket: " + getId() + ", file: " + logFile.getName() + ", reason: " + e.getMessage());
+			} catch (JsonException e) {
+				System.err.println("Guild data file has invalid JSON for ticket: " + getId() + ", file: " + logFile.getName() + ", reason: " + e.getMessage());
+			}
+		} else {
+			transcript = new JsonObject() {{
+				put("messages", new JsonArray());
+			}};
+		}
 	}
 
 	@Override
@@ -145,17 +172,31 @@ public class Ticket implements ITMSnowflake {
 
 	public void removeParticipant(@Nonnull Member participant) { participants.remove(participant); }
 
-	public void appendToLog(@Nonnull String msg, @Nullable Member from) {
-		// TODO: Convert to JSON format and store additional Message data (sent time)
+	public void appendToLog(@Nonnull Message msg) {
+		if (msg.getMember() == null) { return; }
+		appendToLog(msg.getContentStripped(), msg.getMember(), msg.getTimeCreated());
+	}
+	public void appendToLog(@Nonnull String msg, @Nonnull Member from, @Nonnull OffsetDateTime time) {
 		if (msg.isBlank()) { return; }
-		try (FileWriter fw = new FileWriter(getLogFile(), true);
+		((JsonArray) transcript.get("messages")).add(new JsonObject() {{
+			put("time-sent", time.toString());
+			put("author-id", from.getIdLong());
+			put("author-name", from.getEffectiveName());
+			put("message", msg);
+		}});
+		try (FileWriter fw = new FileWriter(logFile)) {
+			if (logFile.exists() || logFile.createNewFile()) { fw.write(transcript.toJson()); }
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		/*try (FileWriter fw = new FileWriter(getLogFile(), true);
 			 BufferedWriter bw = new BufferedWriter(fw); PrintWriter pw = new PrintWriter(bw)){
 				if (from == null) {
 					pw.printf("%s%n", msg);
 				} else {
 					pw.printf("%s (%s) : %s%n", from.getEffectiveName(), from.getUser().getId(), msg);
 				}
-		} catch (IOException ex) { ex.printStackTrace(); }
+		} catch (IOException ex) { ex.printStackTrace(); }*/
 	}
 
 	public static Ticket fromJson(long id, JsonObject json, Department dept) {
@@ -166,7 +207,7 @@ public class Ticket implements ITMSnowflake {
 		try { channel = dept.getGuild().getTextChannelById((long) json.get(Config.Field.TICKET_CHANNEL.path)); } catch (Exception ignore) {}
 		try { subject = (String) json.get(Config.Field.TICKET_CHANNEL.path); } catch (Exception ignore) {}
 		if (author == null || channel == null || subject == null) { return null; }
-		return new Ticket(id, dept, author, channel, subject);
+		return new Ticket(id, dept, channel, author, subject);
 	}
 
 	public JsonObject toJson() {

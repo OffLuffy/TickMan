@@ -11,11 +11,10 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.*;
 import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Encapsulates all the Guild-specific data and allows for fetching and modifying it.
@@ -195,6 +194,15 @@ public class Config implements Jsonable {
 		return dept;
 	}
 
+	public void deleteDepartment(long deptId) {
+		for (Department dept : getDepartments()) {
+			if (dept.getIdLong() == deptId) {
+				departments.remove(dept);
+				TMEventManager.departmentDelete(dept);
+			}
+		}
+	}
+
 	public void deleteDepartment(String deptId) {
 		for (Department dept : getDepartments()) {
 			if (dept.getId().equals(deptId)) {
@@ -205,15 +213,14 @@ public class Config implements Jsonable {
 	}
 
 	public Ticket getTicketByChannel(TextChannel channel) {
-		Ticket ticket = null;
 		for (Department d : getDepartments()) {
 			for (Ticket t : d.getTickets()) {
 				if (t.getTicketChannel().equals(channel)) {
-					ticket = t;
+					return t;
 				}
 			}
 		}
-		return ticket;
+		return null;
 	}
 
 	public Set<Ticket> getTicketsByMember(Member member) {
@@ -226,6 +233,19 @@ public class Config implements Jsonable {
 			}
 		}
 		return foundTickets;
+	}
+
+	public @Nullable Department findDepartment(@Nonnull String query) {
+		List<Department> found = new ArrayList<>() {{ add(null); add(null); add(null); add(null); add(null); add(null); }};
+		departments.forEach(dept -> {
+			if (dept.getId().equalsIgnoreCase(query)) { found.set(0, dept); return; }
+			if (found.get(1) == null && dept.getSupportChannel().getId().equalsIgnoreCase(query)) { found.set(1, dept); }
+			if (found.get(2) == null && dept.getTicketCategory().getId().equalsIgnoreCase(query)) { found.set(2, dept); }
+			if (found.get(3) == null && dept.getName().equalsIgnoreCase(query)) { found.set(3, dept); }
+			if (found.get(4) == null && dept.getSupportChannel().getName().equalsIgnoreCase(query)) { found.set(4, dept); }
+			if (found.get(5) == null && dept.getTicketCategory().getName().equalsIgnoreCase(query)) { found.set(5, dept); }
+		});
+		return found.stream().findFirst().orElse(null);
 	}
 
 	@Override
